@@ -129,8 +129,7 @@ def main():
 	trans_data = data.transpose()
 	dis_mat = distance.cdist(trans_data, trans_data)
 
-	# print(E)
-	# print(dis_mat)
+
 
 	while(E):
 		min_sd_idx = get_min_sd(std_dev, D)
