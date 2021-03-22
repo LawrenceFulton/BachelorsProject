@@ -3,17 +3,17 @@ from numpy.core.fromnumeric import cumsum
 from numpy.linalg import norm
 from sklearn import decomposition
 from sklearn.decomposition import PCA
+import pandas as pd
 import random as rd
 import sys
+from matplotlib import pyplot as plt
 
 # from sklearn.utils.extmath import softmax
 PASS = 0
 ACCEPT = 1
 
 def data_creation(n_indi, n_decision):
-    # n_decision = 1000 # number of decisions each individual has to do 
-    # n_indi = 10000 # the number of individuals 
-
+    cutoff = 0.2 # pretty much arbitrarily chosen 
 
     ################
     proto1 = np.random.uniform(-1,1,n_decision)
@@ -36,10 +36,16 @@ def data_creation(n_indi, n_decision):
 
 
     # print("data", data)
-
-    data = np.where(data < 0.33, data, 1 )
-    data = np.where(data > -0.33, data, -1 )
+    print(data)
+    data = np.where(data < cutoff, data, 1 )
+    data = np.where(data > -cutoff, data, -1 )
     data = np.round(data)
+    pd.DataFrame(data).to_csv('data/underlying_data.csv')
+    # print("mean",np.mean( data))
+    # test0 = np.count_nonzero(data == 0)
+    # test1 =  np.count_nonzero(data == -1)
+    # testminus1 = np.count_nonzero(data == 1)
+    # print(test0, test1, testminus1)
     return data
 
 
@@ -49,7 +55,6 @@ def priority_metric(A,P,S,E):
     S = np.array(S)
     p = (P + 1) / (S + 2)
     a = (A + 1) / (S + 2)
-
     return ((1 - p) * (E + 1) * a)**2
 
 def getE(known_votes):
@@ -62,6 +67,22 @@ def softmax(vector):
     e = np.exp(vector)
     return e / e.sum()
 
+def measuring_consensus(known_votes, has_seen):
+    out = 0
+    total_votes = sum(has_seen) # might have to change so that in only includes if there more than 2 votes in a column 
+
+    for i in range(known_votes.shape[1]):
+        votes_i = known_votes[:,i]
+        mask_i = has_seen[:,1]
+        # print(mask_i)
+        cleaned_values = votes_i[mask_i]
+        std_dev_votes = np.std(cleaned_values)
+        weight = sum(mask_i)* std_dev_votes / total_votes
+        out += weight
+
+
+    return out
+
 
 def voting_alg(underlying_opinion):
     # variables 
@@ -70,9 +91,12 @@ def voting_alg(underlying_opinion):
     
     n_participant = underlying_opinion.shape[0]
     n_votes = underlying_opinion.shape[1]
-    n_votes_per_participant = np.zeros(n_participant)
+    
+    # the votes which are available 
     known_votes = np.zeros([n_admins,n_pregiven_votes])
-    # joined_participant_id = []
+    # if a user has seen a particular question 
+    has_seen = np.zeros([n_admins,n_pregiven_votes],dtype='bool')
+    consensus = []
 
     votes_dict = {}
     participant_dict = {}
@@ -83,8 +107,7 @@ def voting_alg(underlying_opinion):
     A = [0] * n_pregiven_votes
     S = [n_admins]*n_pregiven_votes
 
-    # if a user has seen a particular question 
-    has_seen = np.zeros([n_admins,n_pregiven_votes])
+
 
 
     # init phase
@@ -108,9 +131,11 @@ def voting_alg(underlying_opinion):
             if decision == PASS:
                 P[vote] += 1
 
+    print(has_seen)
+
 
     for i in range ((n_participant*n_votes) -1):
-        print("index:" , i)
+        # print(i)
         n_known_people = known_votes.shape[0] ## the n of people already in the known data
         n_known_votes = known_votes.shape[1] ## the open question
 
@@ -124,7 +149,7 @@ def voting_alg(underlying_opinion):
             known_person = list(participant_dict.keys())[list_idx]
         else:
             ## else we have to add row to the known_votes of form [1,n_votes]
-            person_to_append = np.zeros([1,n_known_votes])
+            person_to_append = np.zeros([1,n_known_votes],dtype='bool')
             known_votes = np.r_[known_votes,person_to_append]
             has_seen = np.r_[has_seen,person_to_append]
             
@@ -144,14 +169,14 @@ def voting_alg(underlying_opinion):
             known_person = n_known_people
             n_known_people += 1
            
-        # print(known_person)
 
         # one in n_votes times we let the participant propose a new question 
         if rd.randint(0,n_known_votes) == 0:
             # preparing the known_votes array to be able to get an extra column 
             question_to_append = np.zeros([n_known_people,1])
+            bla =  np.zeros([n_known_people,1], dtype=bool)
             known_votes = np.c_[known_votes,question_to_append]
-            has_seen = np.c_[has_seen,question_to_append]
+            has_seen = np.c_[has_seen,bla]
 
             ## finding an underlying question to ask
             
@@ -163,8 +188,12 @@ def voting_alg(underlying_opinion):
             if len(open_questions) == 0:
                 print("there are no open questions ")
                 print("known_votes", known_votes)
-                np.savetxt('data/known_votes.csv', known_votes, delimiter=",")
-                sys.exit()
+                pd.DataFrame(known_votes).to_csv('data/known_votes.csv')
+                pd.DataFrame(has_seen).to_csv('data/has_seen.csv')
+                print(votes_dict)
+                print(participant_dict)                
+                # sys.exit()
+                return consensus
 
             # chooses one of these not jet proposed question
             proposed_question = rd.choice(open_questions)
@@ -195,23 +224,27 @@ def voting_alg(underlying_opinion):
             else:
                 print("this should not happen please investigate")
                 sys.exit(0)
+                # return consensus
 
 
 
         else:
             p_has_seen = has_seen[known_person,:]
             if sum(p_has_seen) == n_known_votes:
-                np.savetxt('data/known_votes.csv', known_votes, delimiter=",")
+                pd.DataFrame(known_votes).to_csv('data/known_votes.csv')
+                pd.DataFrame(has_seen).to_csv('data/has_seen.csv')                
                 print("no open question for person ", known_person)
                 print("known_votes",  known_votes)
-                sys.exit()
+                print(votes_dict)
+                print(participant_dict)
+                # sys.exit()
+                return consensus
 
             E = getE(known_votes)
             priority = priority_metric(A,P,S,E)
             p_has_seen = has_seen[known_person,:]
             # cleaning priority so that no question will be proposed which the user has already seen
             p_has_seen = p_has_seen != 0
-            # print(p_has_seen)
             cleaned_priority =  np.where(~p_has_seen,priority,-999 )
             choosing_probability = softmax(cleaned_priority)
             cum_choosing_probability = cumsum(choosing_probability)
@@ -221,10 +254,14 @@ def voting_alg(underlying_opinion):
             vote = underlying_opinion[rand_per, real_question]
             known_votes[known_person,proposed_question] = vote
             has_seen[known_person,proposed_question] = True
+        
+        consensus.append(measuring_consensus(known_votes,has_seen))
 
     print("somehow finished:")
     print("known_votes,", known_votes)
-    np.savetxt('data/known_votes.csv', known_votes, delimiter=",")
+    pd.DataFrame(known_votes).to_csv('data/known_votes.csv')
+    pd.DataFrame(has_seen).to_csv('data/has_seen.csv')
+
 
 
 
@@ -232,6 +269,12 @@ def voting_alg(underlying_opinion):
 
 if __name__ == "__main__":
     n_indi = 100
-    n_votes = 100 # n_votes_per_person to be frank
+    n_votes = 1000 # n_votes_per_person to be frank
     a = data_creation(n_indi, n_votes)
-    voting_alg(a)
+
+    consensus = voting_alg(a)
+
+    plt.plot(consensus)
+    plt.xlabel('votes')
+    plt.ylabel('standard deviation of votes ')
+    plt.savefig("figures/con.pdf")

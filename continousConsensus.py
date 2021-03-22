@@ -1,9 +1,11 @@
 import numpy as np
-from numpy.core.arrayprint import printoptions
-from numpy.core.numeric import NaN
 import pandas as pd
 from matplotlib import pyplot as plt
 
+'''
+Takes in the data of one of the openData provided by polis and continuously after each vote updates the consensus 
+and creates a plot out of this development.
+'''
 
 
 # path = "vtaiwan.uberx"
@@ -37,12 +39,7 @@ for i in range(n_decisions):
     restructured_decisions.append(np.zeros(0))
 
 
-
 min_row = 2
-counter = 0 
-
-# df = df[:300, :]
-
 
 
 # for each row in the sorted df we check the
@@ -74,7 +71,6 @@ for row in df:
             consensus += n_votes_on_decision[i] * std_dev_per_decision[i] / sum_decisions
 
         out_consensus.append(consensus)
-    counter += 1
 
 
 
