@@ -9,23 +9,54 @@ import random as rd
 PASS = 0
 ACCEPT = 1
 
+def data_creation(n_indi, n_decision):
+    # n_decision = 1000 # number of decisions each individual has to do 
+    # n_indi = 10000 # the number of individuals 
 
-class Conversation:
-    def priority_metric(A,P,S,E):
-        p = (P + 1) / (S + 2)
-        a = (A + 1) / (S + 2)
 
-        return ((1 - p) * (E + 1) * a)**2
+    ################
+    proto1 = np.random.uniform(-1,1,n_decision)
+    proto2 = np.random.uniform(-1,1,n_decision)
 
-    def getE(known_votes):
-        known_votes_trans = known_votes.T
-        reduced_votes = PCA(n_components = 2).fit_transform(known_votes_trans)
-        return norm(reduced_votes, axis = 1)
 
-    # calculate the softmax of a vector
-    def softmax(vector):
-        e = np.exp(vector)
-        return e / e.sum()
+    data = np.zeros((n_indi,n_decision))
+
+
+
+    for r in range(n_indi):
+        believe  = rd.random()
+        extra_bias =  np.random.uniform(-0.5,0.5, n_decision)
+        data[r,:] = (believe  * proto1 + (1 - believe ) * proto2)  + extra_bias
+	
+
+    # centering the data of each decision 
+    for c in range(n_decision):
+        data[:,c] = data[:,c] - np.mean(data[:,c])
+
+
+    print("data", data)
+
+    data = np.where(data < 0.33, data, 1 )
+    data = np.where(data > -0.33, data, -1 )
+    data = np.round(data)
+    return data
+
+
+def priority_metric(A,P,S,E):
+    p = (P + 1) / (S + 2)
+    a = (A + 1) / (S + 2)
+
+    return ((1 - p) * (E + 1) * a)**2
+
+def getE(known_votes):
+    known_votes_trans = known_votes.T
+    reduced_votes = PCA(n_components = 2).fit_transform(known_votes_trans)
+    return norm(reduced_votes, axis = 1)
+
+# calculate the softmax of a vector
+def softmax(vector):
+    e = np.exp(vector)
+    return e / e.sum()
 
 
 def voting_alg(underlying_opinion):
@@ -123,12 +154,12 @@ def voting_alg(underlying_opinion):
 
 
         else:
-            E = Conversation.getE(known_votes)
-            priority = Conversation.priority_metric(A,P,S,E)
+            E = getE(known_votes)
+            priority = priority_metric(A,P,S,E)
             p_has_seen = has_seen[known_person,:]
             # cleaning priority so that no question will be proposed which the user has already seen
             cleaned_priority =  np.where[~p_has_seen,priority,0] 
-            choosing_probability = Conversation.softmax(cleaned_priority)
+            choosing_probability = softmax(cleaned_priority)
             cum_choosing_probability = cumsum(choosing_probability)
             r = rd.random()
             proposed_question = np.argmax(cum_choosing_probability>r)
@@ -138,49 +169,9 @@ def voting_alg(underlying_opinion):
             has_seen[known_person,proposed_question] = True
 
 
-        
-
-
-
-        # deleting already answered questions 
-
-
-
-
-
-             
-
-
-            
-
-
-
-
-        
-
-    
-    print(participant_dict)
-
-
-
-
-
-
-
-
-
-
-
-    pass
-
-
-
 
 if __name__ == "__main__":
-    a = np.array([[1,2,3],[4,11,6],[20,8,9],[10,11,12]])
-    # print(a)
-
-    # b = Conversation.getE(a)
-    # print(b)
-
+    n_indi = 1000
+    n_votes = 1000 # n_votes_per_person to be frank
+    a = data_creation(n_indi, n_votes)
     voting_alg(a)
