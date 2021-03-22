@@ -4,6 +4,7 @@ from numpy.linalg import norm
 from sklearn import decomposition
 from sklearn.decomposition import PCA
 import random as rd
+import sys
 
 # from sklearn.utils.extmath import softmax
 PASS = 0
@@ -34,7 +35,7 @@ def data_creation(n_indi, n_decision):
         data[:,c] = data[:,c] - np.mean(data[:,c])
 
 
-    print("data", data)
+    # print("data", data)
 
     data = np.where(data < 0.33, data, 1 )
     data = np.where(data > -0.33, data, -1 )
@@ -43,6 +44,9 @@ def data_creation(n_indi, n_decision):
 
 
 def priority_metric(A,P,S,E):
+    A = np.array(A)
+    P = np.array(P)
+    S = np.array(S)
     p = (P + 1) / (S + 2)
     a = (A + 1) / (S + 2)
 
@@ -104,11 +108,13 @@ def voting_alg(underlying_opinion):
             if decision == PASS:
                 P[vote] += 1
 
-    while(True):
-        known_n_people = known_votes.shape[0] ## the n of people already in the known data
-        known_n_votes = known_votes.shape[1] ## the open question
 
-        rand_per = rd.randint(n_participant) ## a random person from the whole (unknown) data
+    for i in range ((n_participant*n_votes) -1):
+        print("index:" , i)
+        n_known_people = known_votes.shape[0] ## the n of people already in the known data
+        n_known_votes = known_votes.shape[1] ## the open question
+
+        rand_per = rd.randint(0,n_participant-1) ## a random person from the whole (unknown) data
         
         known_person = -1
         values_list = list(participant_dict.values())
@@ -118,18 +124,34 @@ def voting_alg(underlying_opinion):
             known_person = list(participant_dict.keys())[list_idx]
         else:
             ## else we have to add row to the known_votes of form [1,n_votes]
-            person_to_append = np.zeros([known_n_votes])
+            person_to_append = np.zeros([1,n_known_votes])
             known_votes = np.r_[known_votes,person_to_append]
-            known_person = known_n_people
-            known_n_people += 1
+            has_seen = np.r_[has_seen,person_to_append]
+            
+            all_people = range(n_participant)
+            participant_values_list = list(participant_dict.values())
+            open_participants =  [x for x in all_people if x not in participant_values_list] 
+            if len(open_participants) == 0:
+                print("there are no open open_participants ")
+                print("known_votes", known_votes)
+                sys.exit()
+
+            new_person = rd.choice(open_participants)
+
+            # updating the dictionary
+            participant_dict.update({n_known_people:new_person})
+            
+            known_person = n_known_people
+            n_known_people += 1
            
-        print(known_person)
+        # print(known_person)
 
         # one in n_votes times we let the participant propose a new question 
-        if rd.randint(0,known_n_votes) == 0:
+        if rd.randint(0,n_known_votes) == 0:
             # preparing the known_votes array to be able to get an extra column 
-            question_to_append = np.zeros([known_n_people,1])
+            question_to_append = np.zeros([n_known_people,1])
             known_votes = np.c_[known_votes,question_to_append]
+            has_seen = np.c_[has_seen,question_to_append]
 
             ## finding an underlying question to ask
             
@@ -138,12 +160,19 @@ def voting_alg(underlying_opinion):
             question_values_list = list(votes_dict.values())
             # gets the list of questions which haven't been answered
             open_questions = [x for x in all_questions if x not in question_values_list] 
+            if len(open_questions) == 0:
+                print("there are no open questions ")
+                print("known_votes", known_votes)
+                np.savetxt('data/known_votes.csv', known_votes, delimiter=",")
+                sys.exit()
+
             # chooses one of these not jet proposed question
             proposed_question = rd.choice(open_questions)
 
+
             # updating the dictionary
-            k = known_n_votes
-            votes_dict.update(k,proposed_question)
+            k = n_known_votes
+            votes_dict.update({k:proposed_question})
 
             ## get the actual vote from the underlying knowledgebase
             vote = underlying_opinion[rand_per,proposed_question]
@@ -152,13 +181,38 @@ def voting_alg(underlying_opinion):
             # updating the has_voted matrix
             has_seen[known_person,k] = True
 
+            # updating P,S,A
+            S.append(1)
+            if vote == ACCEPT:
+                A.append(1)
+                P.append(0)
+            elif vote == PASS:
+                P.append(0)
+                A.append(1)
+            elif vote == -1:
+                P.append(0)
+                A.append(0)
+            else:
+                print("this should not happen please investigate")
+                sys.exit(0)
+
+
 
         else:
+            p_has_seen = has_seen[known_person,:]
+            if sum(p_has_seen) == n_known_votes:
+                np.savetxt('data/known_votes.csv', known_votes, delimiter=",")
+                print("no open question for person ", known_person)
+                print("known_votes",  known_votes)
+                sys.exit()
+
             E = getE(known_votes)
             priority = priority_metric(A,P,S,E)
             p_has_seen = has_seen[known_person,:]
             # cleaning priority so that no question will be proposed which the user has already seen
-            cleaned_priority =  np.where[~p_has_seen,priority,0] 
+            p_has_seen = p_has_seen != 0
+            # print(p_has_seen)
+            cleaned_priority =  np.where(~p_has_seen,priority,-999 )
             choosing_probability = softmax(cleaned_priority)
             cum_choosing_probability = cumsum(choosing_probability)
             r = rd.random()
@@ -168,10 +222,16 @@ def voting_alg(underlying_opinion):
             known_votes[known_person,proposed_question] = vote
             has_seen[known_person,proposed_question] = True
 
+    print("somehow finished:")
+    print("known_votes,", known_votes)
+    np.savetxt('data/known_votes.csv', known_votes, delimiter=",")
+
+
+
 
 
 if __name__ == "__main__":
-    n_indi = 1000
-    n_votes = 1000 # n_votes_per_person to be frank
+    n_indi = 100
+    n_votes = 100 # n_votes_per_person to be frank
     a = data_creation(n_indi, n_votes)
     voting_alg(a)
