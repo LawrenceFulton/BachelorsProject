@@ -53,13 +53,14 @@ def priority_metric(A,P,S,E):
     a = (A + 1) / (S + 2)
     return ((1 - p) * (E + 1) * a)**2
 
-def getE(known_votes):
+def get_e(known_votes):
     known_votes_trans = known_votes.T
     reduced_votes = PCA(n_components = 2).fit_transform(known_votes_trans)
     return norm(reduced_votes, axis = 1)
 
 # calculate the softmax of a vector
 def softmax(vector):
+    print(vector)
     e = np.exp(vector)
     return e / e.sum()
 
@@ -101,9 +102,7 @@ def voting_alg(underlying_opinion):
     # the vote history, which at some point can be imported to continuosConsensus.py
     vote_hist = np.zeros((1,3))
 
-    # the dictionaries responsible for mapping the known votes and known participants to the underlying matrix
-    votes_dict = {}
-    participant_dict = {}
+
 
 
     # Pass / Accepted / Seen, taken from the original closure code, will continuously be updated 
@@ -118,25 +117,25 @@ def voting_alg(underlying_opinion):
     # a number of admins would add theire own opinions to some questions in the beginning
     # modeling this by hardcoding it. 
 
-    # admins are added
-    for admin in range(n_admins):
-        participant_dict.update({admin:admin})
-
-    # some discussions are added
-    for vote in range(n_pregiven_votes):
-        votes_dict.update({vote:vote})
-
 
     # admins vote on discussions 
     for admin in range(n_admins):
         for vote in range(n_pregiven_votes):
-            has_seen[admin,vote] = True
-            decision = underlying_opinion[admin,vote]
-            known_votes[admin,vote] = decision
-            if decision == ACCEPT:
-                A[vote] += 1
-            if decision == PASS:
-                P[vote] += 1
+
+            if rd.choice([True,False]):
+                has_seen[admin,vote] = True
+                decision = underlying_opinion[admin,vote]
+                known_votes[admin,vote] = decision
+                if decision == ACCEPT:
+                    A[vote] += 1
+                if decision == PASS:
+                    P[vote] += 1
+
+    print(known_votes)
+    print(has_seen)
+
+    print(A)
+    print(P)
 
 
     for i in range ((n_participant*n_votes) -1):
@@ -200,17 +199,22 @@ def voting_alg(underlying_opinion):
             # unanswered_votes = all_known_votes[~mask]
             # rand_vote = rd.choice(unanswered_votes)
 
-            E = getE(known_votes)
+            E = get_e(known_votes)
             priority = priority_metric(A,P,S,E)
             p_has_seen = has_seen[rand_per,:]
+
+            if sum(p_has_seen) == len(p_has_seen):
+                # deals with the case that all questions are already seen by this person
+                continue
+
             # cleaning priority so that no question will be proposed which the user has already seen
-            cleaned_priority =  np.where(~p_has_seen,priority,-9999 )
+            cleaned_priority =  np.where(~p_has_seen,priority,-99 )
             choosing_probability = softmax(cleaned_priority)
             cum_choosing_probability = cumsum(choosing_probability)
             r = rd.random()
             chosen_question = np.argmax(cum_choosing_probability>r)
             vote = underlying_opinion[rand_per, chosen_question]
-            
+
             known_votes[rand_per,chosen_question] = vote
             has_seen[rand_per,chosen_question] = True
 
@@ -225,10 +229,8 @@ def voting_alg(underlying_opinion):
         ## appending the vote into a db which can then be analysed 
         new_item = np.array([chosen_question,rand_per, vote])
         new_item = new_item.reshape(1,3)
-        # print(new_item)
 
         vote_hist = np.append(vote_hist,new_item, axis=0)
-        # vote_hist = np.r_[vote_hist,new_item]
 
 
 
@@ -242,7 +244,7 @@ def voting_alg(underlying_opinion):
 
 if __name__ == "__main__":
     n_indi = 10
-    n_votes = 30 # n_votes_per_person to be frank
+    n_votes = 50 # n_votes_per_person to be frank
     a = data_creation(n_indi, n_votes)
 
 
