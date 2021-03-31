@@ -6,27 +6,48 @@ from matplotlib import pyplot as plt
 Takes in the data of one of the openData provided by polis and continuously after each vote updates the consensus 
 and creates a plot out of this development.
 '''
+fromPolis = True
+
+if fromPolis:
 
 
-# path = "vtaiwan.uberx"
-# path = "march-on.operation-marchin-orders"
-# path = "scoop-hivemind.ubi"
-# path = "scoop-hivemind.taxes"
-path = "american-assembly.bowling-green"
 
-df = pd.read_csv("../polis/openData/" + path + "/votes.csv")
+    # path = "vtaiwan.uberx"
+    # path = "march-on.operation-marchin-orders"
+    path = "scoop-hivemind.ubi"
+    # path = "scoop-hivemind.taxes"
+    # path = "american-assembly.bowling-green"
+
+    df = pd.read_csv("../polis/openData/" + path + "/votes.csv")
 
 
-df = df.sort_values(by = 'timestamp')
-df = df.drop(['datetime'],axis = 1)
+    df = df.sort_values(by = 'timestamp')
+    df = df.drop(['datetime'],axis = 1)
+    df = df.drop(['timestamp'], axis = 1)
+
+    print(df)
+else:
+    path = "vote_hist"
+    df = pd.read_csv("data/" + path+ '.csv')
+    # df = pd.DataFrame(  df, 
+    #                 columns=['idx', 'comment-id', 'voter-id', 'vote'])
+    # df = df.drop(0, axis= 0)
+    df.columns = ['idx', 'comment-id', 'voter-id', 'vote']
+    print(df.columns)
+    df = df.drop('idx' ,axis=1)
+
 
 df = df.values
+print(df)
+
+df = df.astype(int)
 
 # number of different questions 
-n_decisions = max(df[:,2]) + 1 
+n_decisions = max(df[:,0]) + 1
+print(n_decisions)
 
 # number of votes for each question
-n_votes_on_decision = np.zeros(n_decisions) 
+n_votes_on_decision = np.zeros(int(n_decisions))
 
 # the consensus updated after each time step
 out_consensus = []
@@ -41,14 +62,16 @@ for i in range(n_decisions):
 
 min_row = 2
 
+print(restructured_decisions)
+
 
 # for each row in the sorted df we check the
 for row in df:
-    comment_id = row[1]
-    voter_id = row[2]
-    vote = row[3]
+    comment_id = row[0]
+    voter_id = row[1]
+    vote = row[2]
 
-
+    print(comment_id)
     n_votes_on_decision[comment_id] += 1 # was voter_id
     temp_comment_id = restructured_decisions[comment_id]
     restructured_decisions[comment_id] = np.append(temp_comment_id, vote)
@@ -73,9 +96,10 @@ for row in df:
         out_consensus.append(consensus)
 
 
+test = np.array(out_consensus)
 
-print(np.array(out_consensus))
-out_consensus.tofile("data/" + path  + ".csv")
+print(test)
+test.tofile("data/out_" + path  + ".csv")
 
 plt.plot(out_consensus)
 plt.xlabel('votes')

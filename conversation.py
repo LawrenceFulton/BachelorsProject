@@ -1,6 +1,8 @@
 import numpy as np
 from numpy.core.fromnumeric import cumsum
+from numpy.lib.function_base import vectorize
 from numpy.linalg import norm
+from scipy.sparse.construct import rand
 from sklearn import decomposition
 from sklearn.decomposition import PCA
 import pandas as pd
@@ -60,9 +62,20 @@ def get_e(known_votes):
 
 # calculate the softmax of a vector
 def softmax(vector):
-    print(vector)
+    print("vetor",vector)
     e = np.exp(vector)
+    print("E: ", e)
     return e / e.sum()
+
+def get_max(vector):
+    max_idx = -99
+    cur_val = -99
+    for i in range(len(vector)):
+        if vector[i] > cur_val:
+            max_idx = i
+            cur_val = vector[i]
+    return max_idx
+
 
 def measuring_consensus(known_votes, has_seen):
     out = 0
@@ -101,6 +114,7 @@ def voting_alg(underlying_opinion):
     consensus = []
     # the vote history, which at some point can be imported to continuosConsensus.py
     vote_hist = np.zeros((1,3))
+    # vote_hist = np.array(3)
 
 
 
@@ -131,11 +145,11 @@ def voting_alg(underlying_opinion):
                 if decision == PASS:
                     P[vote] += 1
 
-    print(known_votes)
-    print(has_seen)
+    # print(known_votes)
+    # print(has_seen)
 
-    print(A)
-    print(P)
+    # print(A)
+    # print(P)
 
 
     for i in range ((n_participant*n_votes) -1):
@@ -166,12 +180,28 @@ def voting_alg(underlying_opinion):
         # a dynamic probability which will make people propose new questions one in n_known_votes times
         rand_vote = rd.randint(0,n_known_votes)
         if rand_vote == n_known_votes:
+            
+            # stopping condition so we will stick at the amount of questions people have 
+            if rand_vote == n_votes: 
+                continue
             # we append the column into the known database 
             question_to_append = np.zeros([n_known_people,1],dtype=bool)
+            
+            # appending the new empty data to the known data
             known_votes = np.c_[known_votes,question_to_append]
             has_seen = np.c_[has_seen,question_to_append]
+    
+    
+            ## get the actual vote from the underlying knowledgebase
+            vote = underlying_opinion[rand_per,rand_vote]
+            # updating the has_voted matrix
+            has_seen[rand_per,rand_vote] = True
+
+            
             n_known_votes += 1
             chosen_question = rand_vote
+
+
 
             # updating P,S,A
             S.append(1)
@@ -185,6 +215,7 @@ def voting_alg(underlying_opinion):
                 P.append(0)
                 A.append(0)
             else:
+                print("vote is ", vote)
                 print("this should not happen please investigate")
                 sys.exit(0)
                 # return consensus
@@ -201,18 +232,46 @@ def voting_alg(underlying_opinion):
 
             E = get_e(known_votes)
             priority = priority_metric(A,P,S,E)
-            p_has_seen = has_seen[rand_per,:]
+            p_has_seen = has_seen[rand_per,:] # mask for the current person
 
             if sum(p_has_seen) == len(p_has_seen):
                 # deals with the case that all questions are already seen by this person
                 continue
 
             # cleaning priority so that no question will be proposed which the user has already seen
+            
+            
+            cleaned_priority = priority[~p_has_seen]
+            # choosing_probability = softmax(cleaned_priority)
+            # cum_choosing_probability = cumsum(choosing_probability)
+            # r = rd.random()
+
+            # # the chosen question filtered has to still be converted to the real idx
+            # chosen_question_filtered = np.argmax(cum_choosing_probability>r) 
+
+            chosen_question_filtered = get_max(cleaned_priority)
+            print(chosen_question_filtered)
+
+            chosen_question = -99
+            for i in range(len(p_has_seen)):
+                if p_has_seen[i] == False:
+                    chosen_question_filtered -= 1
+                    if chosen_question_filtered == -1:
+                        chosen_question = i
+
+            if chosen_question == -99:
+                print("sdjabdjkabsdjkabdhasb")
+
+
+            '''
             cleaned_priority =  np.where(~p_has_seen,priority,-99 )
             choosing_probability = softmax(cleaned_priority)
             cum_choosing_probability = cumsum(choosing_probability)
             r = rd.random()
             chosen_question = np.argmax(cum_choosing_probability>r)
+            '''
+
+
             vote = underlying_opinion[rand_per, chosen_question]
 
             known_votes[rand_per,chosen_question] = vote
@@ -243,8 +302,8 @@ def voting_alg(underlying_opinion):
 
 
 if __name__ == "__main__":
-    n_indi = 10
-    n_votes = 50 # n_votes_per_person to be frank
+    n_indi = 2000
+    n_votes = 1000 # n_votes_per_person to be frank
     a = data_creation(n_indi, n_votes)
 
 
