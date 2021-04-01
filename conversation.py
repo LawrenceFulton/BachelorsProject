@@ -155,7 +155,7 @@ def voting_alg(underlying_opinion):
     for i in range ((n_participant*n_votes) -1):
         if i % 100 == 0:
             # update for the cmd 
-            print(i)
+            print("index", i)
         
         # the number of known people
         n_known_people = known_votes.shape[0]
@@ -250,17 +250,18 @@ def voting_alg(underlying_opinion):
             # chosen_question_filtered = np.argmax(cum_choosing_probability>r) 
 
             chosen_question_filtered = get_max(cleaned_priority)
-            print(chosen_question_filtered)
+            # print(chosen_question_filtered)
 
             chosen_question = -99
-            for i in range(len(p_has_seen)):
-                if p_has_seen[i] == False:
+            for j in range(len(p_has_seen)):
+                if p_has_seen[j] == False:
                     chosen_question_filtered -= 1
                     if chosen_question_filtered == -1:
-                        chosen_question = i
+                        chosen_question = j
 
             if chosen_question == -99:
                 print("sdjabdjkabsdjkabdhasb")
+                sys.exit(0)
 
 
             '''

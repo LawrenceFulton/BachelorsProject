@@ -6,7 +6,7 @@ from matplotlib import pyplot as plt
 Takes in the data of one of the openData provided by polis and continuously after each vote updates the consensus 
 and creates a plot out of this development.
 '''
-fromPolis = True
+fromPolis = False
 
 if fromPolis:
 
@@ -37,7 +37,18 @@ else:
     df = df.drop('idx' ,axis=1)
 
 
+
 df = df.values
+
+
+# reducing the matrix size 
+max_size = 100000
+if df.shape[0] > max_size:
+    
+    df = df[:max_size,:]
+
+
+
 print(df)
 
 df = df.astype(int)
@@ -104,4 +115,5 @@ test.tofile("data/out_" + path  + ".csv")
 plt.plot(out_consensus)
 plt.xlabel('votes')
 plt.ylabel('standard deviation of votes ')
-plt.savefig("figures/" + path + ".pdf")
+plt.savefig("bla")
+# plt.savefig("figures/" + path + ".pdf")
