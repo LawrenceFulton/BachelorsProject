@@ -12,9 +12,9 @@ if fromPolis:
 
 
 
-    # path = "vtaiwan.uberx"
+    path = "vtaiwan.uberx"
     # path = "march-on.operation-marchin-orders"
-    path = "scoop-hivemind.ubi"
+    # path = "scoop-hivemind.ubi"
     # path = "scoop-hivemind.taxes"
     # path = "american-assembly.bowling-green"
 
@@ -25,15 +25,12 @@ if fromPolis:
     df = df.drop(['datetime'],axis = 1)
     df = df.drop(['timestamp'], axis = 1)
 
-    print(df)
 else:
-    path = "vote_hist"
-    df = pd.read_csv("data/" + path+ '.csv')
-    # df = pd.DataFrame(  df, 
-    #                 columns=['idx', 'comment-id', 'voter-id', 'vote'])
-    # df = df.drop(0, axis= 0)
+    path = "vote_hist_2"
+
+    df = pd.read_csv("data/" + path + '.csv')
+
     df.columns = ['idx', 'comment-id', 'voter-id', 'vote']
-    print(df.columns)
     df = df.drop('idx' ,axis=1)
 
 
@@ -42,7 +39,7 @@ df = df.values
 
 
 # reducing the matrix size 
-max_size = 100000
+max_size = 10000
 if df.shape[0] > max_size:
     
     df = df[:max_size,:]
@@ -73,7 +70,21 @@ for i in range(n_decisions):
 
 min_row = 2
 
-print(restructured_decisions)
+
+sorted_votes = df[:,2]
+
+# print("mean", np.mean(sorted_votes))
+# cum_sum = np.cumsum(sorted_votes)
+# cum_sum_mean = cum_sum / np.arange(1, len(sorted_votes)+1)
+
+
+# plt.plot(cum_sum_mean)
+# plt.savefig("bla")
+
+
+
+
+
 
 
 # for each row in the sorted df we check the
@@ -82,7 +93,7 @@ for row in df:
     voter_id = row[1]
     vote = row[2]
 
-    print(comment_id)
+    # print(comment_id)
     n_votes_on_decision[comment_id] += 1 # was voter_id
     temp_comment_id = restructured_decisions[comment_id]
     restructured_decisions[comment_id] = np.append(temp_comment_id, vote)
@@ -115,5 +126,4 @@ test.tofile("data/out_" + path  + ".csv")
 plt.plot(out_consensus)
 plt.xlabel('votes')
 plt.ylabel('standard deviation of votes ')
-plt.savefig("bla")
-# plt.savefig("figures/" + path + ".pdf")
+plt.savefig("figures/out_" + path + ".pdf")

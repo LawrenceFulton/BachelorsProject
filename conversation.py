@@ -14,7 +14,7 @@ PASS = 0
 ACCEPT = 1
 
 def data_creation(n_indi, n_decision):
-    cutoff = 0.15 # pretty much arbitrarily chosen 
+    cutoff = 0.07 # pretty much arbitrarily chosen 
 
     ################
     proto1 = np.random.uniform(-1,1,n_decision)
@@ -31,9 +31,12 @@ def data_creation(n_indi, n_decision):
         data[r,:] = (believe  * proto1 + (1 - believe ) * proto2)  #+ extra_bias
 	
 
-    # centering the data of each decision 
-    for c in range(n_decision):
-        data[:,c] = data[:,c] - np.mean(data[:,c])
+    # # centering the data of each decision 
+    # for c in range(n_decision):
+    #     data[:,c] = data[:,c] - np.mean(data[:,c])
+
+    # print(data)
+
 
 
     data = np.where(data < cutoff, data, 1 )
@@ -44,7 +47,8 @@ def data_creation(n_indi, n_decision):
     # test0 = np.count_nonzero(data == 0)
     # test1 =  np.count_nonzero(data == -1)
     # testminus1 = np.count_nonzero(data == 1)
-    # print(test0, test1, testminus1)
+    # print("after", test0, test1, testminus1)
+
     return data
 
 def priority_metric(A,P,S,E):
@@ -76,7 +80,6 @@ def get_max(vector):
             cur_val = vector[i]
     return max_idx
 
-
 def measuring_consensus(known_votes, has_seen):
     out = 0
     total_votes = np.sum(has_seen) # might have to change so that in only includes if there more than 2 votes in a column 
@@ -95,9 +98,9 @@ def voting_alg(underlying_opinion):
     # variables 
 
     # the number of admins 
-    n_admins = 2
+    n_admins = 5
     # the number of votes the admins create and also vote on
-    n_pregiven_votes = 5
+    n_pregiven_votes = int( underlying_opinion.shape[1]  / 2)
     
     # the number of participants
     n_participant = underlying_opinion.shape[0]
@@ -110,8 +113,7 @@ def voting_alg(underlying_opinion):
     # if a user has seen a particular question 
     has_seen = np.zeros([n_admins,n_pregiven_votes],dtype='bool')
     
-    # consensus over the course of the algorithm, might do that eternally
-    consensus = []
+
     # the vote history, which at some point can be imported to continuosConsensus.py
     vote_hist = np.zeros((1,3))
     # vote_hist = np.array(3)
@@ -145,15 +147,18 @@ def voting_alg(underlying_opinion):
                 if decision == PASS:
                     P[vote] += 1
 
-    # print(known_votes)
-    # print(has_seen)
 
-    # print(A)
-    # print(P)
+                new_item = np.array([vote,admin, decision])
+                new_item = new_item.reshape(1,3)
+
+                vote_hist = np.append(vote_hist,new_item, axis=0)
+                
 
 
-    for i in range ((n_participant*n_votes) -1):
-        if i % 100 == 0:
+
+    ## only half of the possible votes can be decided on
+    for i in range (int((n_participant*n_votes) / 2)):
+        if i % 1000 == 0:
             # update for the cmd 
             print("index", i)
         
@@ -162,12 +167,17 @@ def voting_alg(underlying_opinion):
         # the number of known votes
         n_known_votes = known_votes.shape[1] ## the open question
 
+
+        ### Choice of person
+
         # picks a random person from the whole data
         rand_per = rd.randint(0,n_known_people)
 
         # if a new person joins 
         if rand_per == n_known_people:
+
             if rand_per == n_participant:
+                # stops that we dont ask more people that we have in the underlying data 
                 continue
 
 
@@ -176,6 +186,9 @@ def voting_alg(underlying_opinion):
             has_seen = np.r_[has_seen,person_to_append]
             n_known_people += 1
 
+        
+        ### Choice of question
+        
         chosen_question = -99
         # a dynamic probability which will make people propose new questions one in n_known_votes times
         rand_vote = rd.randint(0,n_known_votes)
@@ -252,6 +265,8 @@ def voting_alg(underlying_opinion):
             chosen_question_filtered = get_max(cleaned_priority)
             # print(chosen_question_filtered)
 
+
+            # allows us to get back from the cleaned priority to all real values
             chosen_question = -99
             for j in range(len(p_has_seen)):
                 if p_has_seen[j] == False:
@@ -293,6 +308,12 @@ def voting_alg(underlying_opinion):
         vote_hist = np.append(vote_hist,new_item, axis=0)
 
 
+    ## still have to remove the first row of the hist since it is (0,0,0)
+    vote_hist = np.delete(vote_hist, (0), axis=0)
+
+
+
+
 
 
     print("somehow finished:")
@@ -303,8 +324,8 @@ def voting_alg(underlying_opinion):
 
 
 if __name__ == "__main__":
-    n_indi = 2000
-    n_votes = 1000 # n_votes_per_person to be frank
+    n_indi = 100
+    n_votes = 200 # n_votes_per_person to be frank
     a = data_creation(n_indi, n_votes)
 
 
