@@ -324,8 +324,8 @@ def voting_alg(underlying_opinion):
 
 
 if __name__ == "__main__":
-    n_indi = 100
-    n_votes = 200 # n_votes_per_person to be frank
+    n_indi = 130
+    n_votes = 2000 # n_votes_per_person to be frank
     a = data_creation(n_indi, n_votes)
 
 

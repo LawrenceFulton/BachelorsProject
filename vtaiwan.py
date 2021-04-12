@@ -11,7 +11,7 @@ import numpy as np
 path = "vtaiwan.uberx"
 # path = "march-on.operation-marchin-orders"
 
-df = pd.read_csv("../polis/openData/" + path + "/participants-votes.csv")
+df = pd.read_csv("../../polis/openData/" + path + "/participants-votes.csv")
 print(df)
 
 ## deleting everyone with no group + all not need columns 
