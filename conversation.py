@@ -1,14 +1,14 @@
 import numpy as np
-from numpy.core.fromnumeric import cumsum
-from numpy.lib.function_base import vectorize
+# from numpy.core.fromnumeric import cumsum
+# from numpy.lib.function_base import vectorize
 from numpy.linalg import norm
-from scipy.sparse.construct import rand
-from sklearn import decomposition
+# from sklearn import decomposition
 from sklearn.decomposition import PCA
 import pandas as pd
 import random as rd
 import sys
-from matplotlib import pyplot as plt
+# from matplotlib import pyplot as plt
+# from voting_distribution import voting_distribution
 
 PASS = 0
 ACCEPT = 1
@@ -50,6 +50,25 @@ def data_creation(n_indi, n_decision):
     # print("after", test0, test1, testminus1)
 
     return data
+
+def get_disribution(n_indi, n_decision):
+    # dist = voting_distribution(n_indi, n_decision)
+    # sum_vote = sum(dist)
+    # per_dist = dist / sum(dist)
+    ratio = n_decision / n_indi
+    y = []
+    cur_y = n_decision
+    for _ in range(n_indi):
+        y.append(int(cur_y))
+        cur_y -= ratio
+    
+
+    
+    sum_vote = sum(y)
+    per_dist = np.array(y) / sum_vote
+
+
+    return per_dist, sum_vote 
 
 def priority_metric(A,P,S,E):
     A = np.array(A)
@@ -95,12 +114,12 @@ def measuring_consensus(known_votes, has_seen):
     return out
 
 def voting_alg(underlying_opinion):
-    # variables 
+    ## variables 
 
     # the number of admins 
     n_admins = 5
     # the number of votes the admins create and also vote on
-    n_pregiven_votes = int( underlying_opinion.shape[1]  / 2)
+    n_pregiven_votes = 20
     
     # the number of participants
     n_participant = underlying_opinion.shape[0]
@@ -108,25 +127,24 @@ def voting_alg(underlying_opinion):
     # the total disussions which can be proposed
     n_votes = underlying_opinion.shape[1]
     
+    vote_dist, sum_vote = get_disribution(n_participant, n_votes)
+    p = list(range(n_participant))
+
+
+
     # the votes which are available 
-    known_votes = np.zeros([n_admins,n_pregiven_votes])
+    known_votes = np.zeros([n_participant,n_pregiven_votes])
     # if a user has seen a particular question 
-    has_seen = np.zeros([n_admins,n_pregiven_votes],dtype='bool')
+    has_seen = np.zeros([n_participant,n_pregiven_votes],dtype='bool')
     
 
     # the vote history, which at some point can be imported to continuosConsensus.py
     vote_hist = np.zeros((1,3))
-    # vote_hist = np.array(3)
-
-
-
 
     # Pass / Accepted / Seen, taken from the original closure code, will continuously be updated 
     P = [0] * n_pregiven_votes
     A = [0] * n_pregiven_votes
     S = [n_admins]*n_pregiven_votes
-
-
 
 
     # init phase
@@ -157,7 +175,7 @@ def voting_alg(underlying_opinion):
 
 
     ## only half of the possible votes can be decided on
-    for i in range (int((n_participant*n_votes) / 2)):
+    for i in range (int(sum_vote)):
         if i % 1000 == 0:
             # update for the cmd 
             print("index", i)
@@ -171,10 +189,11 @@ def voting_alg(underlying_opinion):
         ### Choice of person
 
         # picks a random person from the whole data
-        rand_per = rd.randint(0,n_known_people)
-
+        # rand_per = rd.randint(0,n_known_people)
+        rand_per = np.random.choice( p, 1, p = vote_dist)
+        '''
         # if a new person joins 
-        if rand_per == n_known_people:
+        if rand_per >= n_known_people:
 
             if rand_per == n_participant:
                 # stops that we dont ask more people that we have in the underlying data 
@@ -185,7 +204,7 @@ def voting_alg(underlying_opinion):
             known_votes = np.r_[known_votes,person_to_append]
             has_seen = np.r_[has_seen,person_to_append]
             n_known_people += 1
-
+        '''
         
         ### Choice of question
         
@@ -245,11 +264,18 @@ def voting_alg(underlying_opinion):
 
             E = get_e(known_votes)
             priority = priority_metric(A,P,S,E)
-            p_has_seen = has_seen[rand_per,:] # mask for the current person
+            p_has_seen = has_seen[rand_per,:][0] # mask for the current person
 
+            '''
             if sum(p_has_seen) == len(p_has_seen):
                 # deals with the case that all questions are already seen by this person
                 continue
+            '''
+            if np.all(p_has_seen):
+                # deals with the case that all questions are already seen by this person
+                continue
+
+
 
             # cleaning priority so that no question will be proposed which the user has already seen
             
@@ -302,7 +328,11 @@ def voting_alg(underlying_opinion):
         # consensus.append(measuring_consensus(known_votes,has_seen))
         
         ## appending the vote into a db which can then be analysed 
-        new_item = np.array([chosen_question,rand_per, vote])
+
+        # print(chosen_question)
+        # print(rand_per[0])
+        # print(vote[0])
+        new_item = np.array([chosen_question,rand_per[0], vote[0]])
         new_item = new_item.reshape(1,3)
 
         vote_hist = np.append(vote_hist,new_item, axis=0)
@@ -310,9 +340,6 @@ def voting_alg(underlying_opinion):
 
     ## still have to remove the first row of the hist since it is (0,0,0)
     vote_hist = np.delete(vote_hist, (0), axis=0)
-
-
-
 
 
 
@@ -324,15 +351,14 @@ def voting_alg(underlying_opinion):
 
 
 if __name__ == "__main__":
-    n_indi = 130
-    n_votes = 2000 # n_votes_per_person to be frank
-    a = data_creation(n_indi, n_votes)
+    n_indi = 20
+    n_votes = 22 # number of different votes
+    data = data_creation(n_indi, n_votes)
 
 
-    consensus = voting_alg(a)
+    consensus = voting_alg(data)
     # print(consensus)
     # np.savetxt("consensus.txt", consensus, delimiter=",")
     # plt.plot(consensus)
     # plt.xlabel('votes')
     # plt.ylabel('standard deviation of votes ')
-    # plt.savefig("figures/conse.pdf")

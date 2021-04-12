@@ -12,8 +12,8 @@ if fromPolis:
 
 
 
-    path = "vtaiwan.uberx"
-    # path = "march-on.operation-marchin-orders"
+    # path = "vtaiwan.uberx"
+    path = "march-on.operation-marchin-orders"
     # path = "scoop-hivemind.ubi"
     # path = "scoop-hivemind.taxes"
     # path = "american-assembly.bowling-green"
@@ -26,7 +26,8 @@ if fromPolis:
     df = df.drop(['timestamp'], axis = 1)
 
 else:
-    path = "vote_hist_2"
+    path = "vote_hist_5"
+    # path = "vote_hist_backup"
 
     df = pd.read_csv("data/" + path + '.csv')
 
@@ -39,10 +40,23 @@ df = df.values
 
 
 # reducing the matrix size 
-max_size = 10000
-if df.shape[0] > max_size:
+# max_size = 10000
+# if df.shape[0] > max_size:
     
-    df = df[:max_size,:]
+#     df = df[:max_size,:]
+
+
+sorted_votes = df[:,2]
+
+
+print("mean", np.mean(sorted_votes))
+cum_sum = np.cumsum(sorted_votes)
+cum_sum_mean = cum_sum / np.arange(1, len(sorted_votes)+1)
+
+
+plt.plot(cum_sum_mean)
+plt.savefig("tmp/bla")
+
 
 
 
@@ -71,19 +85,10 @@ for i in range(n_decisions):
 min_row = 2
 
 
-sorted_votes = df[:,2]
-
-# print("mean", np.mean(sorted_votes))
-# cum_sum = np.cumsum(sorted_votes)
-# cum_sum_mean = cum_sum / np.arange(1, len(sorted_votes)+1)
-
-
-# plt.plot(cum_sum_mean)
-# plt.savefig("bla")
 
 
 
-
+'''
 
 
 
@@ -121,9 +126,11 @@ for row in df:
 test = np.array(out_consensus)
 
 print(test)
+print("file saved as "+ path)
 test.tofile("data/out_" + path  + ".csv")
 
 plt.plot(out_consensus)
 plt.xlabel('votes')
 plt.ylabel('standard deviation of votes ')
 plt.savefig("figures/out_" + path + ".pdf")
+'''
