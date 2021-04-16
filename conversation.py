@@ -1,14 +1,10 @@
 import numpy as np
-# from numpy.core.fromnumeric import cumsum
-# from numpy.lib.function_base import vectorize
 from numpy.linalg import norm
-# from sklearn import decomposition
 from sklearn.decomposition import PCA
 import pandas as pd
 import random as rd
 import sys
-# from matplotlib import pyplot as plt
-# from voting_distribution import voting_distribution
+
 
 PASS = 0
 ACCEPT = 1
@@ -27,8 +23,8 @@ def data_creation(n_indi, n_decision):
 
     for r in range(n_indi):
         believe  = rd.random()
-        # extra_bias =  np.random.uniform(-0.5,0.5, n_decision)
-        data[r,:] = (believe  * proto1 + (1 - believe ) * proto2)  #+ extra_bias
+        noise =  np.random.uniform(-0.5,0.5, n_decision)
+        data[r,:] = (believe  * proto1 + (1 - believe ) * proto2)  + noise
 	
 
     # # centering the data of each decision 
@@ -83,43 +79,24 @@ def get_e(known_votes):
     reduced_votes = PCA(n_components = 2).fit_transform(known_votes_trans)
     return norm(reduced_votes, axis = 1)
 
-# calculate the softmax of a vector
-def softmax(vector):
-    print("vetor",vector)
-    e = np.exp(vector)
-    print("E: ", e)
-    return e / e.sum()
 
 def get_max(vector):
-    max_idx = -99
-    cur_val = -99
-    for i in range(len(vector)):
-        if vector[i] > cur_val:
-            max_idx = i
-            cur_val = vector[i]
-    return max_idx
+    return vector.argmax(axis=0)
 
-def measuring_consensus(known_votes, has_seen):
-    out = 0
-    total_votes = np.sum(has_seen) # might have to change so that in only includes if there more than 2 votes in a column 
+def get_probability(vector):
+    enum = np.array(range(len(vector)))
+    p = np.array(vector) /sum(vector)
+    rand_per = np.random.choice(enum, 1, p = p)
+    return rand_per
 
-    for i in range(known_votes.shape[1]):
-        votes_i = known_votes[:,i]
-        mask_i = has_seen[:,i]
-        cleaned_values = votes_i[mask_i]
-        std_dev_votes = np.std(cleaned_values)
-        weight = np.sum(mask_i)* std_dev_votes / total_votes
-        out += weight
-
-    return out
 
 def voting_alg(underlying_opinion):
     ## variables 
 
     # the number of admins 
-    n_admins = 5
+    n_admins = 3
     # the number of votes the admins create and also vote on
-    n_pregiven_votes = 20
+    n_pregiven_votes = underlying_opinion.shape[1] - 1
     
     # the number of participants
     n_participant = underlying_opinion.shape[0]
@@ -127,8 +104,8 @@ def voting_alg(underlying_opinion):
     # the total disussions which can be proposed
     n_votes = underlying_opinion.shape[1]
     
-    vote_dist, sum_vote = get_disribution(n_participant, n_votes)
-    p = list(range(n_participant))
+    vote_dist, sum_vote = get_disribution(n_participant, n_votes/2)
+    person_list = list(range(n_participant))
 
 
 
@@ -144,7 +121,7 @@ def voting_alg(underlying_opinion):
     # Pass / Accepted / Seen, taken from the original closure code, will continuously be updated 
     P = [0] * n_pregiven_votes
     A = [0] * n_pregiven_votes
-    S = [n_admins]*n_pregiven_votes
+    S = [n_admins] * n_pregiven_votes
 
 
     # init phase
@@ -190,21 +167,7 @@ def voting_alg(underlying_opinion):
 
         # picks a random person from the whole data
         # rand_per = rd.randint(0,n_known_people)
-        rand_per = np.random.choice( p, 1, p = vote_dist)
-        '''
-        # if a new person joins 
-        if rand_per >= n_known_people:
-
-            if rand_per == n_participant:
-                # stops that we dont ask more people that we have in the underlying data 
-                continue
-
-
-            person_to_append = np.zeros([1,n_known_votes],dtype='bool')
-            known_votes = np.r_[known_votes,person_to_append]
-            has_seen = np.r_[has_seen,person_to_append]
-            n_known_people += 1
-        '''
+        rand_per = np.random.choice( person_list, 1, p = vote_dist)
         
         ### Choice of question
         
@@ -252,43 +215,23 @@ def voting_alg(underlying_opinion):
                 sys.exit(0)
                 # return consensus
 
-
-
         else:
-            # if we choose to answer a question which has previously already been proposed 
-            # we have to check if rand_per has already answeed that
-            # all_known_votes = np.array(range(n_known_votes))
-            # mask = has_seen[rand_per,:]
-            # unanswered_votes = all_known_votes[~mask]
-            # rand_vote = rd.choice(unanswered_votes)
 
             E = get_e(known_votes)
             priority = priority_metric(A,P,S,E)
             p_has_seen = has_seen[rand_per,:][0] # mask for the current person
 
-            '''
-            if sum(p_has_seen) == len(p_has_seen):
-                # deals with the case that all questions are already seen by this person
-                continue
-            '''
             if np.all(p_has_seen):
                 # deals with the case that all questions are already seen by this person
                 continue
 
-
-
             # cleaning priority so that no question will be proposed which the user has already seen
-            
-            
             cleaned_priority = priority[~p_has_seen]
-            # choosing_probability = softmax(cleaned_priority)
-            # cum_choosing_probability = cumsum(choosing_probability)
-            # r = rd.random()
 
-            # # the chosen question filtered has to still be converted to the real idx
-            # chosen_question_filtered = np.argmax(cum_choosing_probability>r) 
-
-            chosen_question_filtered = get_max(cleaned_priority)
+            if sum(cleaned_priority) == 0:
+                continue
+            # chosen_question_filtered = get_max(cleaned_priority)
+            chosen_question_filtered = get_probability(cleaned_priority)
             # print(chosen_question_filtered)
 
 
@@ -305,15 +248,6 @@ def voting_alg(underlying_opinion):
                 sys.exit(0)
 
 
-            '''
-            cleaned_priority =  np.where(~p_has_seen,priority,-99 )
-            choosing_probability = softmax(cleaned_priority)
-            cum_choosing_probability = cumsum(choosing_probability)
-            r = rd.random()
-            chosen_question = np.argmax(cum_choosing_probability>r)
-            '''
-
-
             vote = underlying_opinion[rand_per, chosen_question]
 
             known_votes[rand_per,chosen_question] = vote
@@ -328,10 +262,6 @@ def voting_alg(underlying_opinion):
         # consensus.append(measuring_consensus(known_votes,has_seen))
         
         ## appending the vote into a db which can then be analysed 
-
-        # print(chosen_question)
-        # print(rand_per[0])
-        # print(vote[0])
         new_item = np.array([chosen_question,rand_per[0], vote[0]])
         new_item = new_item.reshape(1,3)
 
@@ -351,8 +281,8 @@ def voting_alg(underlying_opinion):
 
 
 if __name__ == "__main__":
-    n_indi = 20
-    n_votes = 22 # number of different votes
+    n_indi = 200
+    n_votes = 2400 # number of different votes
     data = data_creation(n_indi, n_votes)
 
 

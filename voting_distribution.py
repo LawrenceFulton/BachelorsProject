@@ -128,8 +128,36 @@ def votes_distribution():
     pass
 
 
+def get_mean_n_comments():
+
+
+    directory ='../polis/openData'
+    sub_dir = next(os.walk(directory))[1]
+
+
+    counter = 0
+    mean_comments = 0
+    for sub in sub_dir:
+        counter +=1
+        if sub == '.git':
+            continue
+        
+        complete = directory + "/" + sub
+        df = pd.read_csv(complete +  "/comments.csv")
+
+        df = df.values
+
+        mean_comments += df.shape[0]
+
+    mean_comments = mean_comments / counter
+
+    print("the mean length of votes is:: ", mean_comments)
+
+
+
 if __name__ == "__main__":
-    voting_distribution()
+    # voting_distribution()
     # votes_distribution()
+    get_mean_n_comments()
 
 
