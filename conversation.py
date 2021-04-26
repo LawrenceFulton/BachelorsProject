@@ -171,7 +171,7 @@ def voting_alg(underlying_opinion):
         
         ### Choice of question
         
-        chosen_question = -99
+        chosen_question = -999
         # a dynamic probability which will make people propose new questions one in n_known_votes times
 
         E = get_e(known_votes)
