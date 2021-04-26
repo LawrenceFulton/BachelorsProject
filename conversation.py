@@ -172,7 +172,6 @@ def voting_alg(underlying_opinion):
         ### Choice of person
 
         # picks a random person from the whole data
-        # rand_per = rd.randint(0,n_known_people)
         rand_per = np.random.choice( person_list, 1, p = vote_dist)
         
         ### Choice of question
