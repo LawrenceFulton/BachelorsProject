@@ -6,7 +6,7 @@ from matplotlib import pyplot as plt
 Takes in the data of one of the openData provided by polis and continuously after each vote updates the consensus 
 and creates a plot out of this development.
 '''
-fromPolis = True
+fromPolis = False
 
 if fromPolis:
 
@@ -26,7 +26,7 @@ if fromPolis:
     df = df.drop(['timestamp'], axis = 1)
 
 else:
-    path = "vote_hist_14"
+    path = "vote_hist"
     # path = "vote_hist_backup"
 
     df = pd.read_csv("data/" + path + '.csv')
@@ -53,7 +53,7 @@ print("mean", np.mean(sorted_votes))
 cum_sum = np.cumsum(sorted_votes)
 cum_sum_mean = cum_sum / np.arange(1, len(sorted_votes)+1)
 
-cum_sum_mean = cum_sum_mean[50000:]
+cum_sum_mean = cum_sum_mean[10:]
 
 
 plt.plot(cum_sum_mean)

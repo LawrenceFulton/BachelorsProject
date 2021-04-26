@@ -9,29 +9,35 @@ import sys
 PASS = 0
 ACCEPT = 1
 
-def data_creation(n_indi, n_decision):
+def data_creation(n_indi, n_decision, n_proto = 2):
     cutoff = 0.07 # pretty much arbitrarily chosen 
 
-    ################
-    proto1 = np.random.uniform(-1,1,n_decision)
-    proto2 = np.random.uniform(-1,1,n_decision)
+    protos = [0] * n_proto
+    
+    for i in range(n_proto):
+        protos[i] =  np.random.uniform(-1,1,n_decision)
+    
+
+
+    # ################
+    # proto1 = np.random.uniform(-1,1,n_decision)
+    # proto2 = np.random.uniform(-1,1,n_decision)
 
 
     data = np.zeros((n_indi,n_decision))
 
-
-
     for r in range(n_indi):
-        believe  = rd.random()
-        noise =  np.random.uniform(-0.5,0.5, n_decision)
-        data[r,:] = (believe  * proto1 + (1 - believe ) * proto2)  + noise
-	
+        believe  = np.random.uniform(0,1,n_proto)
+        noise =  np.random.uniform(-0.7,0.7, n_decision)
+        
+        d = np.zeros(n_decision)
 
-    # # centering the data of each decision 
-    # for c in range(n_decision):
-    #     data[:,c] = data[:,c] - np.mean(data[:,c])
+        for p in range(n_proto):
+            d += believe[p] * protos[p]
 
-    # print(data)
+
+        data[r,:] = d + noise
+    
 
 
 
@@ -39,15 +45,15 @@ def data_creation(n_indi, n_decision):
     data = np.where(data > -cutoff, data, -1 )
     data = np.round(data)
     pd.DataFrame(data).to_csv('data/underlying_data.csv')
-    # print("mean",np.mean( data))
-    # test0 = np.count_nonzero(data == 0)
-    # test1 =  np.count_nonzero(data == -1)
-    # testminus1 = np.count_nonzero(data == 1)
-    # print("after", test0, test1, testminus1)
 
+    print(np.sum(data==1))
+    print(np.sum(data==0))
+    print(np.sum(data==-1))
     return data
 
-def get_disribution(n_indi, n_decision):
+    
+
+def get_distribution(n_indi, n_decision):
     # dist = voting_distribution(n_indi, n_decision)
     # sum_vote = sum(dist)
     # per_dist = dist / sum(dist)
@@ -75,8 +81,7 @@ def priority_metric(A,P,S,E):
     return ((1 - p) * (E + 1) * a)**2
 
 def get_e(known_votes):
-    known_votes_trans = known_votes.T
-    reduced_votes = PCA(n_components = 2).fit_transform(known_votes_trans)
+    reduced_votes = PCA(n_components = 2).fit_transform(known_votes.T)
     return norm(reduced_votes, axis = 1)
 
 
@@ -94,7 +99,7 @@ def voting_alg(underlying_opinion):
     ## variables 
 
     # the number of admins 
-    n_admins = 3
+    n_admins = 2
     # the number of votes the admins create and also vote on
     n_pregiven_votes = underlying_opinion.shape[1] - 1
     
@@ -104,7 +109,7 @@ def voting_alg(underlying_opinion):
     # the total disussions which can be proposed
     n_votes = underlying_opinion.shape[1]
     
-    vote_dist, sum_vote = get_disribution(n_participant, n_votes/2)
+    vote_dist, sum_vote = get_distribution(n_participant, n_votes/4)
     person_list = list(range(n_participant))
 
 
@@ -133,20 +138,23 @@ def voting_alg(underlying_opinion):
     for admin in range(n_admins):
         for vote in range(n_pregiven_votes):
 
-            if rd.choice([True,False]):
-                has_seen[admin,vote] = True
-                decision = underlying_opinion[admin,vote]
-                known_votes[admin,vote] = decision
-                if decision == ACCEPT:
-                    A[vote] += 1
-                if decision == PASS:
-                    P[vote] += 1
+            # if rd.choice([True,False]):
+                
+            has_seen[admin,vote] = True
+            decision = underlying_opinion[admin,vote]
+            # decision = rd.choice([True,False])
+
+            known_votes[admin,vote] = decision
+            if decision == ACCEPT:
+                A[vote] += 1
+            if decision == PASS:
+                P[vote] += 1
 
 
-                new_item = np.array([vote,admin, decision])
-                new_item = new_item.reshape(1,3)
+            new_item = np.array([vote,admin, decision])
+            new_item = new_item.reshape(1,3)
 
-                vote_hist = np.append(vote_hist,new_item, axis=0)
+            vote_hist = np.append(vote_hist,new_item, axis=0)
                 
 
 
@@ -258,8 +266,6 @@ def voting_alg(underlying_opinion):
                 A[chosen_question] += 1
             elif vote == PASS:
                 P[chosen_question] += 1 
-
-        # consensus.append(measuring_consensus(known_votes,has_seen))
         
         ## appending the vote into a db which can then be analysed 
         new_item = np.array([chosen_question,rand_per[0], vote[0]])
@@ -281,14 +287,9 @@ def voting_alg(underlying_opinion):
 
 
 if __name__ == "__main__":
-    n_indi = 200
-    n_votes = 2400 # number of different votes
-    data = data_creation(n_indi, n_votes)
+    n_indi = 70
+    n_votes = 540 # number of different votes
+    data = data_creation(n_indi, n_votes,5)
 
 
     consensus = voting_alg(data)
-    # print(consensus)
-    # np.savetxt("consensus.txt", consensus, delimiter=",")
-    # plt.plot(consensus)
-    # plt.xlabel('votes')
-    # plt.ylabel('standard deviation of votes ')

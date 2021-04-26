@@ -93,40 +93,34 @@ def voting_distribution(mean_n_participant = 1193, mean_max_votes = 156 ):
     return mean_y
 
 
-def votes_distribution():
+def votes_per_comment():
+    directory ='../polis/openData/american-assembly.bowling-green'
+
+    df = pd.read_csv(directory +  "/participants-votes.csv")
+
+    df = df.values[:,6:]
+
+    # print(df)
+    sums = np.count_nonzero(~np.isnan(df), axis=0)
+    # sums = np.nansum(df, axis=0)
+    sort_sums = np.sort(sums)
+    plt.plot(sort_sums)
+    plt.savefig("tmp/voting_distribution_polis_data_bowling")
+    plt.close()
+    # print(df)
+
+
+    pass
+
+
+def comment_distribution():
     directory ='../polis/openData'
     sub_dir = next(os.walk(directory))[1]
-    
-    y = np.array([])
-    x = np.array([])
 
     for sub in sub_dir:
         if sub == '.git':
             continue
         
-        complete = directory + "/" + sub
-        df = pd.read_csv(complete +  "/comments.csv")
-
-        agree = df['agrees']
-        disagree = df['disagrees']
-
-
-
-        agree = agree.values
-        disagree = disagree.values
-
-        n_votes = agree + disagree
-
-        # data = np.sort(n_votes)[::-1]
-        y = np.append(y,n_votes)
-        # x.append(len(data))
-
-    y = y[y > 4]
-    plt.hist(y)
-    plt.savefig("tmp/bla")
-
-    pass
-
 
 def get_mean_n_comments():
 
@@ -154,10 +148,28 @@ def get_mean_n_comments():
     print("the mean length of votes is:: ", mean_comments)
 
 
+def voting_distribution_own_data():
+    directory ='data/has_seen.csv'
+    # sub_dir = next(os.walk(directory))[1]
+    df = pd.read_csv(directory)
+
+    df = df.values[:,1:]
+    sums = np.sum(df, axis=0)
+    sort_sums = np.sort(sums)
+    plt.plot(sort_sums)
+    plt.savefig("tmp/voting_distribution_own_data")
+    plt.close()
+    print(df)
+
+
+
+
 
 if __name__ == "__main__":
     # voting_distribution()
     # votes_distribution()
-    get_mean_n_comments()
+    # get_mean_n_comments()
+    voting_distribution_own_data()
+    # votes_per_comment()
 
 
