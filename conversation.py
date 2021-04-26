@@ -142,8 +142,6 @@ def voting_alg(underlying_opinion):
                 
             has_seen[admin,vote] = True
             decision = underlying_opinion[admin,vote]
-            # decision = rd.choice([True,False])
-
             known_votes[admin,vote] = decision
             if decision == ACCEPT:
                 A[vote] += 1
