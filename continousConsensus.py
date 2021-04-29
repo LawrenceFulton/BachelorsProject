@@ -26,7 +26,7 @@ if fromPolis:
     df = df.drop(['timestamp'], axis = 1)
 
 else:
-    path = "vote_hist_43"
+    path = "vote_hist_46"
     # path = "vote_hist_backup"
 
     df = pd.read_csv("data/" + path + '.csv')

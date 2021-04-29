@@ -51,8 +51,6 @@ def data_creation(n_indi, n_decision, n_proto = 2):
     print(np.sum(data==-1))
     return data
 
-    
-
 def get_distribution(n_indi, n_decision):
     print(n_indi, n_decision)
 
@@ -88,7 +86,6 @@ def get_e(known_votes):
     reduced_votes = PCA(n_components = 2).fit_transform(known_votes.T)
     return norm(reduced_votes, axis = 1)
 
-
 def get_max(vector):
     return vector.argmax(axis=0)
 
@@ -97,6 +94,42 @@ def get_probability(vector):
     p = np.array(vector) /sum(vector)
     rand_per = np.random.choice(enum, 1, p = p)
     return rand_per
+
+def get_comment_polis(known_votes, P, A, S, has_seen, cur_per ):
+    '''
+    This is the way comment routing is done by polis
+    '''
+    E = get_e(known_votes)
+    priority = priority_metric(A,P,S,E)
+    p_has_seen = has_seen[cur_per,:][0] # mask for the current person
+
+    if np.all(p_has_seen):
+        # deals with the case that all questions are already seen by this person
+        return -1
+
+    # cleaning priority so that no question will be proposed which the user has already seen
+    cleaned_priority = priority[~p_has_seen]
+
+    if sum(cleaned_priority) == 0:
+        # print("all questions already answered for person ", cur_per)
+        return -1
+    chosen_comment_filtered = get_probability(cleaned_priority)
+    # print(chosen_question_filtered)
+
+
+    # allows us to get back from the cleaned priority to all real values
+    chosen_comment = -99
+    for j in range(len(p_has_seen)):
+        if p_has_seen[j] == False:
+            chosen_comment_filtered -= 1
+            if chosen_comment_filtered == -1:
+                chosen_comment = j
+
+    if chosen_comment == -99:
+        print("some mistake has happend")
+        sys.exit(0)
+
+    return chosen_comment
 
 
 def voting_alg(underlying_opinion):
@@ -113,7 +146,7 @@ def voting_alg(underlying_opinion):
     
     # vote_dist gives the likellyhood for each comment to appear
     # sum_votes gives the total amount of votes we want to investigate
-    vote_dist, sum_vote = get_distribution(n_participant-n_admins, n_votes/10)
+    vote_dist, sum_vote = get_distribution(n_participant-n_admins, n_votes)
     person_list = list(range(n_admins, n_participant))
 
 
@@ -174,57 +207,31 @@ def voting_alg(underlying_opinion):
         
         ### Choice of question
         
-        chosen_question = -99
+        chosen_comment = -99
         # a dynamic probability which will make people propose new questions one in n_known_votes times
 
-        E = get_e(known_votes)
-        priority = priority_metric(A,P,S,E)
-        p_has_seen = has_seen[cur_per,:][0] # mask for the current person
-
-        if np.all(p_has_seen):
-            # deals with the case that all questions are already seen by this person
-            continue
-
-        # cleaning priority so that no question will be proposed which the user has already seen
-        cleaned_priority = priority[~p_has_seen]
-
-        if sum(cleaned_priority) == 0:
-            # print("all questions already answered for person ", cur_per)
-            continue
-        # chosen_question_filtered = get_max(cleaned_priority)
-        chosen_question_filtered = get_probability(cleaned_priority)
-        # print(chosen_question_filtered)
+        chosen_comment = get_comment_polis(known_votes, P, A, S, has_seen, cur_per)
 
 
-        # allows us to get back from the cleaned priority to all real values
-        chosen_question = -99
-        for j in range(len(p_has_seen)):
-            if p_has_seen[j] == False:
-                chosen_question_filtered -= 1
-                if chosen_question_filtered == -1:
-                    chosen_question = j
-
-        if chosen_question == -99:
-            print("some mistake has happend")
-            sys.exit(0)
 
 
-        vote = underlying_opinion[cur_per, chosen_question]
 
-        known_votes[cur_per,chosen_question] = vote
-        has_seen[cur_per,chosen_question] = True
+        vote = underlying_opinion[cur_per, chosen_comment]
+
+        known_votes[cur_per,chosen_comment] = vote
+        has_seen[cur_per,chosen_comment] = True
 
         # updated the A and P values
         if vote == ACCEPT:
-            A[chosen_question] += 1
+            A[chosen_comment] += 1
         elif vote == PASS:
-            P[chosen_question] += 1 
+            P[chosen_comment] += 1 
         
         ## appending the vote into a db which can then be analysed 
-        new_item = np.array([chosen_question, cur_per[0], vote[0]])
-        new_item = new_item.reshape(1,3)
+        new_entry = np.array([chosen_comment, cur_per[0], vote[0]])
+        new_entry = new_entry.reshape(1,3)
 
-        vote_hist = np.append(vote_hist,new_item, axis=0)
+        vote_hist = np.append(vote_hist, new_entry, axis=0)
 
 
     ## still have to remove the first row of the hist since it is (0,0,0)
@@ -240,8 +247,8 @@ def voting_alg(underlying_opinion):
 
 
 if __name__ == "__main__":
-    n_indi = 1163
-    n_votes = 156 * 10 # number of different votes
+    n_indi = 116
+    n_votes = 156 # number of different votes
     data = data_creation(n_indi, n_votes, 5)
 
 
