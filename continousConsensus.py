@@ -26,7 +26,7 @@ if fromPolis:
     df = df.drop(['timestamp'], axis = 1)
 
 else:
-    path = "vote_hist"
+    path = "vote_hist_43"
     # path = "vote_hist_backup"
 
     df = pd.read_csv("data/" + path + '.csv')
@@ -59,7 +59,7 @@ cum_sum_mean = cum_sum_mean[10:]
 plt.plot(cum_sum_mean)
 plt.xlabel("votes")
 plt.ylabel("mean of votes")
-plt.savefig("tmp/sum_votes")
+plt.savefig("tmp/sum_votes_"+path)
 plt.close()
 
 
