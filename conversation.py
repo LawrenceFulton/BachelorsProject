@@ -182,7 +182,7 @@ def voting_alg(underlying_opinion, comment_routing):
     
     # vote_dist gives the likellyhood for each comment to appear
     # sum_votes gives the total amount of votes we want to investigate
-    vote_dist, sum_vote = get_distribution(n_participant-n_admins, n_votes / 10)
+    vote_dist, sum_vote = get_distribution(n_participant-n_admins, n_votes )
     person_list = list(range(n_admins, n_participant))
 
 
@@ -298,12 +298,12 @@ def voting_alg(underlying_opinion, comment_routing):
     print("known_votes,", known_votes)
     pd.DataFrame(known_votes).to_csv('data/known_votes.csv')
     pd.DataFrame(has_seen).to_csv('data/has_seen.csv')
-    pd.DataFrame(vote_hist).to_csv('data/vote_hist_52.csv')
+    pd.DataFrame(vote_hist).to_csv('data/vote_hist_53.csv')
 
 
 if __name__ == "__main__":
     n_indi = 1163
-    n_votes = 156 * 10 # number of different votes
+    n_votes = 156 # number of different votes
     data = data_creation(n_indi, n_votes, 5)
 
 
