@@ -53,7 +53,7 @@ def cum_mean(df,path):
     plt.plot(cum_sum_mean)
     plt.xlabel("votes")
     plt.ylabel("mean of votes")
-    plt.savefig("tmp/sum_votes_"+path+"_test")
+    plt.savefig("tmp/sum_votes_"+path+"_test.png")
     plt.close()
 
 
@@ -83,7 +83,7 @@ def cum_std(df, path):
         restructured_decisions.append(np.zeros(0))
 
 
-    min_row = 2
+    min_votes = 2
 
 
     consensus_comment = np.zeros(n_comment)
@@ -91,7 +91,6 @@ def cum_std(df, path):
     # for each row in the sorted df we check the
     for row in df:
         comment_id = row[0]
-        voter_id = row[1]
         vote = row[2]
 
         # print(comment_id)
@@ -99,9 +98,13 @@ def cum_std(df, path):
         votes_on_comment_id = restructured_decisions[comment_id]
         restructured_decisions[comment_id] = np.append(votes_on_comment_id, vote)
 
-        if n_votes_comment[comment_id] > 2:
+
+        # if there are more than 2 votes for comment x the std gets updated and further investigated
+        if n_votes_comment[comment_id] > min_votes:
             std_comment = np.std(restructured_decisions[comment_id])
             consensus_comment[comment_id] = std_comment
+        else:
+            continue
 
         consensus = 0
         sum_decisions = sum(n_votes_comment)
@@ -122,5 +125,5 @@ def cum_std(df, path):
 if __name__ == '__main__':
     df, path = preprossessing()
     cum_mean(df,path)
-    cum_std(df,path)
+    # cum_std(df,path)
     
