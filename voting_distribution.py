@@ -17,7 +17,7 @@ def voting_distribution(mean_n_participant = 1193, mean_max_votes = 156 ):
 
     directory ='../polis/openData'
     sub_dir = next(os.walk(directory))[1]
-    '''
+    
     n_participants = list()
     n_votes = list() 
 
@@ -37,11 +37,34 @@ def voting_distribution(mean_n_participant = 1193, mean_max_votes = 156 ):
         n_votes.append(max(data))
         n_participants.append(len(data))
 
+    median_p = np.median(n_participants)
+    median_v = np.median(n_votes)
+
+    mean_p = np.mean(n_participants)
+    mean_v = np.mean(n_votes)
+
+    plt.scatter(n_participants, n_votes, label = "data")
+    plt.scatter(mean_p, mean_v, label = "mean")
+    plt.scatter(median_p, median_v, label = "median")
+
+    plt.xlabel("n of participants")
+    plt.ylabel("n of open comments")
+    plt.legend()
+    plt.savefig("tmp/part_votes.pdf")
+    
+    plt.close()
 
 
-    mean_n_participant = np.mean(n_participants)
-    mean_max_votes = np.mean(n_votes)
-    '''
+    print("particpants and votes")
+    print(np.sort(n_participants))
+    print(np.sort(n_votes))
+
+
+
+
+    # mean_n_participant = np.mean(n_participants)
+    # mean_max_votes = np.mean(n_votes)
+    
 
     ## next step is to standadise the values, we decide to statndadise them towards the mean value
 
@@ -166,10 +189,10 @@ def voting_distribution_own_data():
 
 
 if __name__ == "__main__":
-    # voting_distribution()
+    voting_distribution()
     # votes_distribution()
     # get_mean_n_comments()
-    voting_distribution_own_data()
+    # voting_distribution_own_data()
     # votes_per_comment()
 
 

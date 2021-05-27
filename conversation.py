@@ -15,8 +15,6 @@ EPS = 1
 
 
 def data_creation(n_indi, n_decision, n_proto = 2):
-    cutoff = 0.07 # pretty much arbitrarily chosen 
-
     protos = [0] * n_proto
     
     for i in range(n_proto):
@@ -43,6 +41,12 @@ def data_creation(n_indi, n_decision, n_proto = 2):
 
         data[r,:] = d + noise
     
+    arr = data.reshape([1,n_decision*n_indi])
+    sorted_array = np.sort(arr)
+
+    print(sorted_array.shape)
+    cutoff = sorted_array[:,int((2/3) * n_decision * n_indi)]
+    print(cutoff)
 
 
 
@@ -51,9 +55,9 @@ def data_creation(n_indi, n_decision, n_proto = 2):
     data = np.round(data)
     pd.DataFrame(data).to_csv('data/underlying_data.csv')
 
-    print(np.sum(data==1))
-    print(np.sum(data==0))
-    print(np.sum(data==-1))
+    # print("1:",np.sum(data==1))
+    # print("0:",np.sum(data==0))
+    # print("-1:",np.sum(data==-1))
     return data
 
 def get_distribution(n_indi, n_decision):
@@ -298,7 +302,7 @@ def voting_alg(underlying_opinion, comment_routing):
     print("known_votes,", known_votes)
     pd.DataFrame(known_votes).to_csv('data/known_votes.csv')
     pd.DataFrame(has_seen).to_csv('data/has_seen.csv')
-    pd.DataFrame(vote_hist).to_csv('data/vote_hist_53.csv')
+    pd.DataFrame(vote_hist).to_csv('data/vote_hist_54.csv')
 
 
 if __name__ == "__main__":
