@@ -18,7 +18,6 @@ def count_majority_vote(array):
 
 
 
-
 def get_polis_std():
 
     directory ='../polis/openData'
@@ -106,6 +105,79 @@ def get_polis_std():
 
     out.to_csv("data/polis_std.csv")
 
+def get_polis_ratio_of_votes():
+
+    directory ='../polis/openData'
+    sub_dir = next(os.walk(directory))[1]
+
+    sum_participants = 0
+    sum_votes = 0
+    sum_agree = 0
+    sum_disagree = 0
+    counter = 0
+
+    for sub in sub_dir:
+        if sub == '.git':
+            continue
+            
+
+        counter += 1
+        complete = directory + "/" + sub
+        # print(complete)
+        df = pd.read_csv(complete +  "/participants-votes.csv")    
+        n_votes = sum(df['n-votes'])
+        n_agree = sum(df['n-agree'])
+        n_disagree = sum(df['n-disagree'])
+
+        print(n_votes, n_agree, n_disagree)
+        sum_votes += n_votes
+        sum_agree += n_agree
+        sum_disagree += n_disagree
+        sum_participants += len(df['n-votes'])
+
+    print("final")
+    print(sum_votes, sum_agree, sum_disagree)
+
+    print("ratio")
+    print(sum_votes/counter, sum_agree/counter, sum_disagree/counter)
+
+    print(sum_votes / sum_participants)
+    # print("mean_votes_per comment", sum(all_votes)/len(all_votes))
+
+
+    pass
+
+
+def get_polis_n_votes(): # number of votes in each discussion
+    directory ='../polis/openData'
+    sub_dir = next(os.walk(directory))[1]
+
+    sum_n_votes = 0
+    votes_per_discussion = []
+    counter = 0
+
+    for sub in sub_dir:
+        if sub == '.git':
+            continue
+        
+        counter += 1 
+
+        complete = directory + "/" + sub
+        # print(complete)
+        df = pd.read_csv(complete +  "/votes.csv")    
+        df = df.values
+        sum_n_votes += df.shape[0]
+        votes_per_discussion.append(df.shape[0])
+        print(df.shape)
+
+    
+
+    print("meadian ", np.median(votes_per_discussion))
+    print("mean  ", sum_n_votes/counter, " votes in a discussion")
+
+
+    pass    
+
 def regression_polis():
     df = pd.read_csv('data/polis_std.csv')
     print(df)
@@ -145,8 +217,12 @@ def plot_data_against_std():
     plt.savefig("tmp/scatter_participants_ratio")
     plt.close()
 
+
+
     
 if __name__ == '__main__':
     # get_polis_std()
-    regression_polis()
+    # regression_polis()
     # plot_data_against_std()
+    # get_polis_ratio_of_votes()
+    get_polis_n_votes()

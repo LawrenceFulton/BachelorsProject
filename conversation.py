@@ -30,7 +30,9 @@ def data_creation(n_indi, n_decision, n_proto = 2):
     data = np.zeros((n_indi,n_decision))
 
     for r in range(n_indi):
-        believe  = np.random.uniform(0,1,n_proto)
+        believe = np.random.uniform(0,1,n_proto)
+        believe = believe / sum(believe)
+
         noise =  np.random.uniform(-0.7,0.7, n_decision)
         
         d = np.zeros(n_decision)
@@ -41,23 +43,17 @@ def data_creation(n_indi, n_decision, n_proto = 2):
 
         data[r,:] = d + noise
     
-    arr = data.reshape([1,n_decision*n_indi])
-    sorted_array = np.sort(arr)
 
-    print(sorted_array.shape)
-    cutoff = sorted_array[:,int((2/3) * n_decision * n_indi)]
-    print(cutoff)
-
-
+    cutoff = 0.1
 
     data = np.where(data < cutoff, data, 1 )
     data = np.where(data > -cutoff, data, -1 )
     data = np.round(data)
     pd.DataFrame(data).to_csv('data/underlying_data.csv')
 
-    # print("1:",np.sum(data==1))
-    # print("0:",np.sum(data==0))
-    # print("-1:",np.sum(data==-1))
+    print("1:",np.sum(data==1))
+    print("0:",np.sum(data==0))
+    print("-1:",np.sum(data==-1))
     return data
 
 def get_distribution(n_indi, n_decision):
@@ -186,7 +182,7 @@ def voting_alg(underlying_opinion, comment_routing):
     
     # vote_dist gives the likellyhood for each comment to appear
     # sum_votes gives the total amount of votes we want to investigate
-    vote_dist, sum_vote = get_distribution(n_participant-n_admins, n_votes )
+    vote_dist, sum_vote = get_distribution(n_participant-n_admins, n_votes / 5 )
     person_list = list(range(n_admins, n_participant))
 
 
@@ -302,13 +298,13 @@ def voting_alg(underlying_opinion, comment_routing):
     print("known_votes,", known_votes)
     pd.DataFrame(known_votes).to_csv('data/known_votes.csv')
     pd.DataFrame(has_seen).to_csv('data/has_seen.csv')
-    pd.DataFrame(vote_hist).to_csv('data/vote_hist_54.csv')
+    pd.DataFrame(vote_hist).to_csv('data/vote_hist_58.csv')
 
 
 if __name__ == "__main__":
-    n_indi = 1163
-    n_votes = 156 # number of different votes
+    n_indi = 500
+    n_votes = 600 # number of different votes
     data = data_creation(n_indi, n_votes, 5)
 
 
-    consensus = voting_alg(data, EPS)
+    consensus = voting_alg(data, POLIS)

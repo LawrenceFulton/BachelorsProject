@@ -1,4 +1,5 @@
 from matplotlib import pyplot as plt
+from numpy.lib import median
 import pandas as pd
 import numpy as np
 import os
@@ -42,6 +43,9 @@ def voting_distribution(mean_n_participant = 1193, mean_max_votes = 156 ):
 
     mean_p = np.mean(n_participants)
     mean_v = np.mean(n_votes)
+
+
+    print(mean_p , mean_v)
 
     plt.scatter(n_participants, n_votes, label = "data")
     plt.scatter(mean_p, mean_v, label = "mean")
@@ -135,15 +139,6 @@ def votes_per_comment():
 
     pass
 
-
-def comment_distribution():
-    directory ='../polis/openData'
-    sub_dir = next(os.walk(directory))[1]
-
-    for sub in sub_dir:
-        if sub == '.git':
-            continue
-        
 
 def get_mean_n_comments():
 

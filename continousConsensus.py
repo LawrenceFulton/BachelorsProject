@@ -1,14 +1,16 @@
 import numpy as np
+from numpy.core.fromnumeric import shape
 import pandas as pd
 from polis_data_processing import count_majority_vote
 from matplotlib import pyplot as plt
+import os
 
 '''
 Takes in the data of one of the openData provided by polis and continuously after each vote updates the consensus 
 and creates a plot out of this development.
 '''
 
-def preprossessing(fromPolis = True):
+def preprossessing(fromPolis = False):
     if fromPolis:
 
 
@@ -27,7 +29,7 @@ def preprossessing(fromPolis = True):
         df = df.drop(['timestamp'], axis = 1)
 
     else:
-        path = "vote_hist_50"
+        path = "vote_hist_58"
         # path = "vote_hist_backup"
 
         df = pd.read_csv("data/" + path + '.csv')
@@ -52,7 +54,7 @@ def cum_mean(df,path):
     plt.plot(cum_sum_mean)
     plt.xlabel("votes")
     plt.ylabel("mean of votes")
-    plt.savefig("tmp/sum_votes_"+path+"_test.png")
+    plt.savefig("figures/cum_mean_"+path+".pdf")
     plt.close()
 
 def cum_std(df, path):
@@ -109,9 +111,9 @@ def cum_std(df, path):
 
     plt.plot(out_consensus)
     plt.xlabel('votes')
-    plt.ylabel('standard deviation of votes ')
-    plt.savefig("figures/out_" + path + "_test2.pdf")
-
+    plt.ylabel('percentage of votes in the majority')
+    plt.savefig("figures/cum_std_" + path + ".pdf")
+    plt.close()
 
 def cum_own_metric(df,path):
     df = df.astype(int)
@@ -158,25 +160,96 @@ def cum_own_metric(df,path):
         sum_decisions = sum(n_votes_comment)
 
         if sum_decisions > 2:
-            # arr = n_votes_comment[n_votes_comment > 2]
+            arr = n_votes_comment[n_votes_comment > 2]
             
-            # n_all_considered_votes = len(arr)
+            n_all_considered_votes = sum(arr)
 
-            consensus = sum(majority_comment) / sum(n_votes_comment)#n_all_considered_votes
+            consensus = sum(majority_comment) / n_all_considered_votes
 
             out_consensus.append(consensus)
 
     plt.plot(out_consensus)
     plt.xlabel('votes')
     plt.ylabel('standard deviation of votes ')
-    plt.savefig("figures/out_" + path + "_test3.pdf")
+    plt.savefig("figures/cum_own_metric_" + path + ".pdf")
+    plt.close()
+    return out_consensus
 
+
+def mean_cum_own_metric():
+
+    directory ='../polis/openData'
+    sub_dir = next(os.walk(directory))[1]
+
+    all_data = np.zeros([1,15000])
+
+    for sub in sub_dir:
+        if sub == '.git':
+            continue
+        
+        complete = directory + "/" + sub
+        df = pd.read_csv(complete +  "/votes.csv")            
+        df = df.sort_values(by = 'timestamp')
+        df = df.drop(['datetime'], axis = 1)
+        df = df.drop(['timestamp'], axis = 1)
+
+        df = df.values
+
+
+        if df.shape[0] > 20000:
+            df = df[:20000,:]
+
+
+        own_data = cum_own_metric(df, sub)
+        own_data = np.array(own_data)
+
+        own_data = np.array(own_data)
+        
+        print("shape before increasing modifying size", own_data.shape[0])
+
+
+        if own_data.shape[0] < 15000:
+
+            add_lenth = 15000 - own_data.shape[0]
+            empty_array = np.empty(add_lenth)
+            # empty_array[:] = np.nan
+            empty_array[:] = own_data[-1]
+            own_data = np.append(own_data, empty_array)
+        else:
+            print("ELSE")
+            own_data = own_data[:15000]
+
+        
+        
+        own_data = np.reshape(own_data, [1,15000])
+        
+        print(all_data.shape)
+
+        all_data = np.append(all_data, own_data, axis=0)
+
+        print(all_data)
+
+
+
+    all_data = np.delete(all_data, (0), axis = 1)
+    print(all_data.shape)
+
+    print(all_data)
+    mean_data = np.nanmean(all_data,axis = 0)
+    
+    print(mean_data.shape)
+    plt.plot(mean_data)
+    plt.xlabel("votes")
+    plt.ylabel("% of people in the majority")
+    plt.savefig("tmp/mean_own_metric_all_data.pdf")
+    plt.close()
     pass
 
 
 if __name__ == '__main__':
     df, path = preprossessing()
-    cum_mean(df,path)
+    # cum_mean(df,path)
     # cum_std(df,path)
-    cum_own_metric(df,path)
+    # cum_own_metric(df,path)
+    mean_cum_own_metric()
     
