@@ -37,6 +37,8 @@ def preprossessing(fromPolis = False):
         df.columns = ['idx', 'comment-id', 'voter-id', 'vote']
         df = df.drop('idx' ,axis=1)
 
+
+    df = df.astype(int)
     return df.values, path
 
 def cum_mean(df,path):
@@ -58,7 +60,6 @@ def cum_mean(df,path):
     plt.close()
 
 def cum_std(df, path):
-    df = df.astype(int)
 
     # number of different questions 
     n_comment = max(df[:,0]) + 1
@@ -116,7 +117,6 @@ def cum_std(df, path):
     plt.close()
 
 def cum_own_metric(df,path):
-    df = df.astype(int)
 
     # number of different questions 
     n_comment = max(df[:,0]) + 1

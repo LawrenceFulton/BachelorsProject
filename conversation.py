@@ -15,6 +15,7 @@ EPS = 1
 
 
 def data_creation(n_indi, n_decision, n_proto = 2):
+    
     protos = [0] * n_proto
     
     for i in range(n_proto):
@@ -33,7 +34,7 @@ def data_creation(n_indi, n_decision, n_proto = 2):
         believe = np.random.uniform(0,1,n_proto)
         believe = believe / sum(believe)
 
-        noise =  np.random.uniform(-0.7,0.7, n_decision)
+        noise =  np.random.uniform(-0.3,0.3, n_decision)
         
         d = np.zeros(n_decision)
 
@@ -49,7 +50,7 @@ def data_creation(n_indi, n_decision, n_proto = 2):
     data = np.where(data < cutoff, data, 1 )
     data = np.where(data > -cutoff, data, -1 )
     data = np.round(data)
-    pd.DataFrame(data).to_csv('data/underlying_data.csv')
+    pd.DataFrame(data).to_csv('data/underlying_data_62.csv')
 
     print("1:",np.sum(data==1))
     print("0:",np.sum(data==0))
@@ -80,9 +81,6 @@ def priority_metric(A,P,S,E):
     S: Seen
     E: Distance (from center in pca reduced space)
     '''
-    A = np.array(A)
-    P = np.array(P)
-    S = np.array(S)
     p = (P + 1) / (S + 2)
     a = (A + 1) / (S + 2)
     return ((1 - p) * (E + 1) * a)**2
@@ -98,6 +96,7 @@ def get_probability(vector):
     enum = np.array(range(len(vector)))
     p = np.array(vector) /sum(vector)
     rand_per = np.random.choice(enum, 1, p = p)
+    # rand_per = np.argmax(vector)
     return rand_per
 
 def get_comment_polis(known_votes, P, A, S, has_seen, cur_per ):
@@ -116,11 +115,8 @@ def get_comment_polis(known_votes, P, A, S, has_seen, cur_per ):
     cleaned_priority = priority[~p_has_seen]
 
     if sum(cleaned_priority) == 0:
-        # print("all questions already answered for person ", cur_per)
         return -1
     chosen_comment_filtered = get_probability(cleaned_priority)
-    # print(chosen_question_filtered)
-
 
     # allows us to get back from the cleaned priority to all real values
     chosen_comment = -99
@@ -175,14 +171,16 @@ def voting_alg(underlying_opinion, comment_routing):
     # the total disussions which can be proposed
     n_votes = underlying_opinion.shape[1]
 
+    print(n_participant, n_votes)
+
     # the number of admins 
-    n_admins = 1
+    n_admins = 2
     # the number of votes the admins create and also vote on
-    n_pregiven_votes = 5
+    n_pregiven_votes = n_votes
     
-    # vote_dist gives the likellyhood for each comment to appear
+    # vote_dist gives the likellyhood for each person to vote
     # sum_votes gives the total amount of votes we want to investigate
-    vote_dist, sum_vote = get_distribution(n_participant-n_admins, n_votes / 5 )
+    vote_dist, sum_vote = get_distribution(n_participant-n_admins, n_votes)
     person_list = list(range(n_admins, n_participant))
 
 
@@ -197,15 +195,18 @@ def voting_alg(underlying_opinion, comment_routing):
     vote_hist = np.zeros((1,3))
 
     # Pass / Accepted / Seen, taken from the original clj code, will continuously be updated 
-    P = [0] * n_votes
-    A = [0] * n_votes
-    S = [0] * n_votes
-
-
+    P = np.zeros(n_votes)
+    A = np.zeros(n_votes)
+    S = np.zeros(n_votes)
+    
     # needed for EPS
     eps = 0.2
     action_value = np.random.uniform(-0.1, 0.1, n_votes)
 
+
+    # ranking 
+    rank = []
+    
 
     # init phase
     # a number of admins would add theire own opinions to some questions in the beginning
@@ -235,7 +236,7 @@ def voting_alg(underlying_opinion, comment_routing):
 
 
     ## only half of the possible votes can be decided on
-    for i in range (int(sum_vote)):
+    for i in range (int(sum_vote)*2):
         if i % 1000 == 0:
             # update for the cmd 
             print("index", i)
@@ -244,7 +245,8 @@ def voting_alg(underlying_opinion, comment_routing):
         ### Choice of person
 
         # picks a random person from the whole data
-        cur_per = np.random.choice( person_list, 1, p = vote_dist)
+        # cur_per = np.random.choice( person_list, 1, p = vote_dist)
+        cur_per = np.random.choice( person_list, 1)
         
         ### Choice of question
         
@@ -289,6 +291,14 @@ def voting_alg(underlying_opinion, comment_routing):
         vote_hist = np.append(vote_hist, new_entry, axis=0)
 
 
+        ## updating ranking 
+        if np.sum(has_seen[:,chosen_comment]) == n_participant:
+            # print("CHOSEN COMMENT, ", chosen_comment)
+            # print(has_seen)
+            rank.append(chosen_comment)
+
+
+
     ## still have to remove the first row of the hist since it is (0,0,0)
     vote_hist = np.delete(vote_hist, (0), axis=0)
 
@@ -296,15 +306,18 @@ def voting_alg(underlying_opinion, comment_routing):
     ## saving the data for further analysis
     print("somehow finished:")
     print("known_votes,", known_votes)
-    pd.DataFrame(known_votes).to_csv('data/known_votes.csv')
+    pd.DataFrame(known_votes).to_csv('data/known_votes_62.csv')
     pd.DataFrame(has_seen).to_csv('data/has_seen.csv')
-    pd.DataFrame(vote_hist).to_csv('data/vote_hist_58.csv')
+    pd.DataFrame(vote_hist).to_csv('data/vote_hist_62.csv')
+    pd.DataFrame(rank).to_csv('data/rank_62.csv')
+    print(rank)
+
 
 
 if __name__ == "__main__":
-    n_indi = 500
-    n_votes = 600 # number of different votes
-    data = data_creation(n_indi, n_votes, 5)
+    n_indi = 200
+    n_votes = 140 # number of different votes
+    data = data_creation(n_indi, n_votes, 2)
 
 
     consensus = voting_alg(data, POLIS)
