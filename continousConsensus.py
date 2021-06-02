@@ -16,10 +16,13 @@ def preprossessing(fromPolis = False):
 
 
         # path = "vtaiwan.uberx"
-        path = "march-on.operation-marchin-orders"
-        # path = "scoop-hivemind.ubi"
+        # path = "march-on.operation-marchin-orders"
+        path = "scoop-hivemind.ubi"
         # path = "scoop-hivemind.taxes"
-        # path = "american-assembly.bowling-green"
+        path = "american-assembly.bowling-green"
+        # path = "football-concussions"
+
+
 
         df = pd.read_csv("../polis/openData/" + path + "/votes.csv")
 
