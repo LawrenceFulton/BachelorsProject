@@ -53,25 +53,29 @@ def cluster_analysis(underlying_data, id):
         #update the known data matrix 
         data[cmt_id,per_id] = vote
 
-        d1 = data[bool_cmt,:]
-        d2 = d1[:,bool_per]
+        # d1 = data[bool_cmt,:]
+        # d2 = d1[:,bool_per]
 
         
         # print(bool_cmt)
 
-        # if (cnt == goal):
-        #     goal += inc
-        #     inc += 5
-            
-        #     idx.append(cnt)
-        #     labels_2 = rep.clustring(d2)
-        #     score_2 = silhouette_score(d2, labels_2)
-        #     scores_2.append(score_2)
-        #     # print(score_2)
+        if (cnt == goal):
 
-        #     labels_3 = rep.clustring(d2,3)
-        #     score_3 = silhouette_score(d2, labels_3)
-        #     scores_3.append(score_3)
+
+            d1 = data[bool_cmt,:]
+            d2 = d1[:,bool_per]        
+            goal += inc
+            inc += 1
+            
+            idx.append(cnt)
+            labels_2 = rep.clustring(d2)
+            score_2 = silhouette_score(d2, labels_2)
+            scores_2.append(score_2)
+            # print(score_2)
+
+            labels_3 = rep.clustring(d2,3)
+            score_3 = silhouette_score(d2, labels_3)
+            scores_3.append(score_3)
             
             # labels_4 = rep.clustring(d2,4)
             # score_4 = silhouette_score(d2, labels_4)
@@ -90,15 +94,15 @@ def cluster_analysis(underlying_data, id):
 
 
     red_data = PCA(n_components=2).fit_transform(d2)
-    labels_2 = rep.clustring(red_data)
-    print("1:", sum(labels_2)," 2:" , len(labels_2)-sum(labels_2))
-    s1 = silhouette_score(d2, labels_2)    
-    s2 = silhouette_score(red_data, labels_2)    
-    print("prepca:", s1, " postpca:",s2)
+    # labels_2 = rep.clustring(red_data)
+    # print("1:", sum(labels_2)," 2:" , len(labels_2)-sum(labels_2))
+    # s1 = silhouette_score(d2, labels_2)    
+    # s2 = silhouette_score(red_data, labels_2)    
+    # print("prepca:", s1, " postpca:",s2)
 
 
-    labels_2, best_n = rep.ideal_n_cluster(red_data)
-    print("NICE AMOUNT OF CLUSTER: ", best_n)
+    rep.ideal_n_cluster(red_data)
+    # print("NICE AMOUNT OF CLUSTER: ", best_n)
 
 
 
@@ -115,11 +119,12 @@ def cluster_analysis(underlying_data, id):
     plt.close()
 
    
-    # print(idx)
-    # plt.plot(idx,scores_2,  label=id + "2")
-    # plt.plot(idx, scores_3, label=id + "3")
-    # # plt.plot(scores_4, label='4')
-    # plt.legend()
+    print("1:", sum(labels_2)," 2:" , len(labels_2)-sum(labels_2))
+
+    plt.plot(idx,scores_2,  label=id + "2")
+    plt.plot(idx, scores_3, label=id + "3")
+    # plt.plot(scores_4, label='4')
+    plt.legend()
 
     
 
@@ -132,10 +137,10 @@ def cluster_analysis(underlying_data, id):
 
 
 if __name__ == '__main__':
-    data, path = cc.preprossessing(True,False)
+    data, path = cc.preprossessing()
 
     cluster_analysis(data,"cleaned_data")
-    # plt.savefig("tmp/sil_" + path+ ".pdf")
+    plt.savefig("tmp/sil_" + path+ ".pdf")
 
 
     pass

@@ -20,7 +20,7 @@ def preprossessing(fromPolis = False, onCluster = False):
 
     if fromPolis:
 
-        # path = "vtaiwan.uberx"
+        path = "vtaiwan.uberx"
         path = "march-on.operation-marchin-orders"
         # path = "scoop-hivemind.ubi"
         # path = "scoop-hivemind.taxes"
@@ -73,8 +73,8 @@ def preprossessing(fromPolis = False, onCluster = False):
             pts = pd.read_csv("../polis/openData/" + path + "/participants-votes.csv")
 
         bad_pts_id = pts.loc[pts['n-votes'] <= 5]
+        bad_pts_id = bad_pts_id['participant'].values
 
-        
         rows_to_delete = []
         for i in range(df.shape[0]):
             pts_id = df[i,1]
@@ -85,10 +85,8 @@ def preprossessing(fromPolis = False, onCluster = False):
         print("n_cleaned pts ", len(rows_to_delete))
         df = cleaned_df
 
-
-
     else:
-        path = "vote_hist_58"
+        path = "vote_hist_64"
         # path = "vote_hist_backup"
 
         df = pd.read_csv("data/" + path + '.csv')
@@ -96,7 +94,7 @@ def preprossessing(fromPolis = False, onCluster = False):
         df.columns = ['idx', 'comment-id', 'voter-id', 'vote']
         df = df.drop('idx' ,axis=1)
         df = df.values
-
+        df = df.astype(int)
 
     return df, path
 
@@ -229,7 +227,7 @@ def cum_own_metric(df,path):
 
     plt.plot(out_consensus)
     plt.xlabel('votes')
-    plt.ylabel('standard deviation of votes ')
+    plt.ylabel('metric of votes ')
     plt.savefig("figures/cum_own_metric_" + path + ".pdf")
     plt.close()
     return out_consensus
@@ -307,8 +305,8 @@ def mean_cum_own_metric():
 
 if __name__ == '__main__':
     df, path = preprossessing()
-    # cum_mean(df,path)
-    # cum_std(df,path)
-    # cum_own_metric(df,path)
-    mean_cum_own_metric()
+    cum_mean(df,path)
+    cum_std(df,path)
+    cum_own_metric(df,path)
+    # mean_cum_own_metric()
     
