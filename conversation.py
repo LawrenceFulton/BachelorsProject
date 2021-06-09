@@ -1,3 +1,4 @@
+from pickle import TRUE
 import numpy as np
 from numpy.core.fromnumeric import argmax
 from numpy.linalg import norm
@@ -5,6 +6,7 @@ from sklearn.decomposition import PCA
 import pandas as pd
 import random as rd
 import sys
+import test
 
 
 PASS = 0
@@ -34,7 +36,7 @@ def data_creation(n_indi, n_decision, n_proto = 2, id = ""):
         believe = np.random.uniform(0,1,n_proto)
         believe = believe / sum(believe)
 
-        noise =  np.random.uniform(-0.3,0.3, n_decision)
+        noise =  np.random.uniform(-0.0001,0.00001, n_decision)
         
         d = np.zeros(n_decision)
 
@@ -237,7 +239,7 @@ def voting_alg(underlying_opinion, comment_routing, id):
 
 
     ## only half of the possible votes can be decided on
-    for i in range (int(sum_vote/10)):
+    for i in range (int(sum_vote*10/11)):
         if i % 1000 == 0:
             # update for the cmd 
             print("index", i)
@@ -246,8 +248,8 @@ def voting_alg(underlying_opinion, comment_routing, id):
         ### Choice of person
 
         # picks a random person from the whole data
-        cur_per = np.random.choice( person_list, 1, p = vote_dist)
-        # cur_per = np.random.choice( person_list, 1)
+        # cur_per = np.random.choice( person_list, 1, p = vote_dist)
+        cur_per = np.random.choice( person_list, 1)
         
         ### Choice of question
         
@@ -315,11 +317,93 @@ def voting_alg(underlying_opinion, comment_routing, id):
 
 
 
+
+
+def ran_voting_alg(underlying_opinion, id):
+    # the number of participants    
+    n_participant = underlying_opinion.shape[0]
+    
+    # the total disussions which can be proposed
+    n_votes = underlying_opinion.shape[1]
+
+
+    # the votes which are available 
+    known_votes = np.zeros([n_participant,n_votes])
+    # if a user has seen a particular question 
+    has_seen = np.zeros([n_participant,n_votes],dtype='bool')
+    
+
+    # the vote history, which at some point can be imported to continuosConsensus.py
+    vote_hist = np.zeros((1,3))
+
+
+    # ranking 
+    rank = []
+    what = 0
+    
+
+
+    i = 0
+
+    ## only half of the possible votes can be decided on
+    while i < (n_participant * n_votes * 10 / 11):
+        what = 0
+        ### Choice of person
+
+        # picks a random person from the whole data
+        cur_per = rd.randint(0, n_participant - 1)
+        cur_cmt = rd.randint(0, n_votes -1)
+        ### Choice of question
+        
+        if has_seen[cur_per,cur_cmt] == True:
+            what = 1
+            continue
+        if what == 1:
+            return 0
+        i += 1
+
+        vote = underlying_opinion[cur_per, cur_cmt]
+
+        known_votes[cur_per,cur_cmt] = vote
+        has_seen[cur_per,cur_cmt] = True
+
+
+
+        
+        ## appending the vote into a db which can then be analysed 
+        new_entry = np.array([cur_cmt, cur_per, vote])
+        new_entry = new_entry.reshape(1,3)
+
+        vote_hist = np.append(vote_hist, new_entry, axis=0)
+
+
+
+
+    ## still have to remove the first row of the hist since it is (0,0,0)
+    vote_hist = np.delete(vote_hist, (0), axis=0)
+
+
+    ## saving the data for further analysis
+    print("somehow finished:")
+    print("known_votes,", known_votes)
+    pd.DataFrame(known_votes).to_csv('data/known_votes_'+ id + '.csv')
+    pd.DataFrame(has_seen).to_csv('data/has_seen_ '+ id +'.csv')
+    pd.DataFrame(vote_hist).to_csv('data/vote_hist_'+ id +'.csv')
+    # pd.DataFrame(rank).to_csv('data/rank_'+ id +'.csv')
+    # print(rank)
+    
+
+
+
+
 if __name__ == "__main__":
-    id = '64'
+    id = '72'
     n_indi = 414
-    n_votes = 112 *10 # number of different votes
-    data = data_creation(n_indi, n_votes, 2, id)
+    n_votes = 112  # number of different votes
+    # data = data_creation(n_indi, n_votes, 2, id)
+    data = test.test_data_creation(n_indi, n_votes,2, id)
 
 
     consensus = voting_alg(data, POLIS, id)
+
+    # ran_voting_alg(data, "random_selection")

@@ -3,7 +3,7 @@ import numpy as np
 import conversation as con 
 from matplotlib import pyplot as plt
 from sklearn.decomposition import PCA 
-from sklearn.cluster import KMeans
+from sklearn.cluster import KMeans, AgglomerativeClustering as Agg
 from sklearn.metrics import silhouette_score
 
 
@@ -40,7 +40,7 @@ def prop_pos(data, labels, vote):
 
     return ragc
 
-def ideal_n_cluster(data):
+def ideal_n_cluster(data, alg = "k"):
     n_paticipants = data.shape[0]
 
     sil_score = []
@@ -50,7 +50,12 @@ def ideal_n_cluster(data):
     best_score = -1
 
     for i in range(2, min(20, n_paticipants)):
-        labels = clustring(data, i)
+
+        if alg == "k":
+            labels = k_clustring(data, i)
+        else:
+            labels = agg_clustering(data, i)
+        
         score = silhouette_score(data, labels)
         
         if score > best_score:
@@ -70,10 +75,17 @@ def ideal_n_cluster(data):
 
     return best_label, best_n_cluster
 
-def clustring(data, n_clusters = 2):
+def k_clustring(data, n_clusters = 2):
     labels = KMeans(n_clusters=n_clusters).fit(data).labels_
     labels = np.array(labels)
     return labels
+
+
+def agg_clustering(data, n_clusters = 2):
+    labels = Agg(n_clusters=n_clusters).fit(data).labels_
+    labels = np.array(labels)
+    return labels
+
 
 
 def binarising_labels(labels, true_value):
@@ -117,23 +129,6 @@ def prop_test(succ, n):
     n += 1
     out = 2 * sqrt(n) * ((succ / n) + (-0.5))
     print(out)
-
-
-# def comment_piorities(data):
-#     extremities = con.get_e(data)
-    
-
-
-#     pass
-
-
-# (defn prop-test
-#   [succ n]
-#   (let [[succ n] (map inc [succ n])]
-#     (* 2
-#        (matrix/sqrt n)
-#        (+ (/ succ n) -0.5))))
-
 
 
 if __name__ == "__main__":

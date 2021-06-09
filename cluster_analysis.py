@@ -1,15 +1,13 @@
-from numpy.core.fromnumeric import shape
-from numpy.random import randint
-from conversation import data_creation
-from repness import prop_pos
 import numpy as np
 from matplotlib import pyplot as plt
 import pandas as pd
-from sklearn.metrics import cluster
 import continousConsensus as cc
 from sklearn.metrics import silhouette_score
 import repness as rep
 from sklearn.decomposition import PCA
+import preprocessing as pre
+
+import mca
 
 
 
@@ -18,24 +16,40 @@ from sklearn.decomposition import PCA
 
 def cluster_analysis(underlying_data, id): 
 
+    cutoff = 5
+
+    un = np.unique(underlying_data[:, 1])
+    print("len of unique shiiit ", len(un))
+
+
     # the max nr of cmts and pers 
-    max_cmt = max(underlying_data[:,0]) +1
-    max_per = max(underlying_data[:,1]) +1 
+    max_cmt = max(underlying_data[:,0]) + 1
+    max_per = max(underlying_data[:,1]) + 1 
 
     ## data[cmt,per]
-    data = np.zeros([max_cmt , max_per])
+    data = np.zeros([max_per, max_cmt])
 
 
     bool_cmt = np.zeros(max_cmt, dtype="bool")
     bool_per = np.zeros(max_per, dtype="bool")
+    cnt_cmt = np.zeros(max_cmt)
+    cnt_per = np.zeros(max_per)
+
     
-    scores_2 = []
+    k_scores_2 = []
     scores_3 = []
     scores_4 = []
+
+    agg_scores_2 = []
+
+    pca_scores_2 = []
+    pca_scores_3 = []
+
+
     idx = []
     cnt = 0
     inc = 10
-    goal = 50
+    goal = 1000
 
     print("length ", underlying_data.shape[0])
 
@@ -48,35 +62,59 @@ def cluster_analysis(underlying_data, id):
         #ubdate of bool arrays 
         bool_cmt[cmt_id] = True
         bool_per[per_id] = True
+        cnt_cmt[cmt_id] += 1
+        cnt_per[per_id] += 1
 
 
         #update the known data matrix 
-        data[cmt_id,per_id] = vote
+        data[per_id, cmt_id] = vote
 
-        # d1 = data[bool_cmt,:]
-        # d2 = d1[:,bool_per]
-
-        
-        # print(bool_cmt)
-
+    
         if (cnt == goal):
+                
+            bool_cnt_cmt = np.where(cnt_cmt > cutoff, True, False)
+            bool_cnt_per = np.where(cnt_per > cutoff, True, False)
 
 
-            d1 = data[bool_cmt,:]
-            d2 = d1[:,bool_per]        
+
+
+            # d1 = data[bool_per,:]
+            # d2 = d1[:,bool_cmt]   
+
+            d1 = data[bool_cnt_per,:]
+            d2 = d1[:,bool_cnt_cmt]   
+
+
+
             goal += inc
             inc += 1
             
             idx.append(cnt)
-            labels_2 = rep.clustring(d2)
-            score_2 = silhouette_score(d2, labels_2)
-            scores_2.append(score_2)
-            # print(score_2)
+            # k_labels_2 = rep.k_clustring(d2)
+            # k_score_2 = silhouette_score(d2, k_labels_2)
+            # k_scores_2.append(k_score_2)
 
-            labels_3 = rep.clustring(d2,3)
-            score_3 = silhouette_score(d2, labels_3)
-            scores_3.append(score_3)
-            
+            # agg_labels_2 = rep.agg_clustering(d2)
+            # agg_score_2 = silhouette_score(d2, agg_labels_2)
+            # # print(agg_score_2)
+            # agg_scores_2.append(agg_score_2)
+
+            red_data = PCA(n_components=2).fit_transform(d2)
+            pca_labels_2 = rep.k_clustring(red_data)
+            pca_score_2 = rep.silhouette_score(red_data, pca_labels_2)
+            pca_scores_2.append(pca_score_2)
+
+
+
+            red_data = PCA(n_components=3).fit_transform(d2)
+            pca_labels_3 = rep.k_clustring(red_data)
+            pca_score_3 = rep.silhouette_score(red_data, pca_labels_3)
+            pca_scores_3.append(pca_score_3)
+
+            # labels_3 = rep.clustring(d2,3)
+            # score_3 = silhouette_score(d2, labels_3)
+            # scores_3.append(score_3)
+         
             # labels_4 = rep.clustring(d2,4)
             # score_4 = silhouette_score(d2, labels_4)
             # scores_4.append(score_4)
@@ -87,43 +125,58 @@ def cluster_analysis(underlying_data, id):
         
 
         if cnt > 150000:
-
-
             break
 
 
 
-    red_data = PCA(n_components=2).fit_transform(d2)
-    # labels_2 = rep.clustring(red_data)
-    # print("1:", sum(labels_2)," 2:" , len(labels_2)-sum(labels_2))
-    # s1 = silhouette_score(d2, labels_2)    
-    # s2 = silhouette_score(red_data, labels_2)    
-    # print("prepca:", s1, " postpca:",s2)
-
-
-    rep.ideal_n_cluster(red_data)
-    # print("NICE AMOUNT OF CLUSTER: ", best_n)
+    # red_data = PCA(n_components=2).fit_transform(d2)
+    # labels_2 = rep.k_clustring(red_data)
+    # # print("1:", sum(labels_2)," 2:" , len(labels_2)-sum(labels_2))
+    # # # s1 = silhouette_score(d2, labels_2)    
+    # # # s2 = silhouette_score(red_data, labels_2)    
+    # # # print("prepca:", s1, " postpca:",s2)
 
 
 
-    fig, ax = plt.subplots()
-    for g in np.unique(labels_2):
-        ix = np.where(labels_2 == g)
-        # if (g == 99 or g == 100):
-        #     ax.scatter(out[ix, 0], out[ix, 1], s=10, label=g)
-        # else:
-        ax.scatter(red_data[ix, 0], red_data[ix, 1], s=1, label=g)
+    # _, best_n = rep.ideal_n_cluster(d2)
+    # print("NICE AMOUNT OF CLUSTER K: ", best_n)
 
-    plt.legend()
-    plt.savefig("tmp/pca")
-    plt.close()
+    # # _, best_n = rep.ideal_n_cluster(d2, "agg")
+    # # print("NICE AMOUNT OF CLUSTER agg: ", best_n)
 
+
+    # fig, ax = plt.subplots()
+    # for g in np.unique(labels_2):
+    #     ix = np.where(labels_2 == g)
+    #     # if (g == 99 or g == 100):
+    #     #     ax.scatter(out[ix, 0], out[ix, 1], s=10, label=g)
+    #     # else:
+    #     ax.scatter(red_data[ix, 0], red_data[ix, 1], s=1, label=g)
+
+    # plt.legend()
+    # plt.savefig("tmp/pca_new")
+    # plt.close()
+    # pd.DataFrame(d2).to_csv("tmp/d2.csv")
+
+    # pca = PCA(n_components=2, svd_solver='full')
+    # pca.fit(d2)
+    # print(pca.explained_variance_ratio_)
+
+
+    print("len per bool", sum(bool_per))
+    # # labels_2 = rep.clustring(d2)
    
-    print("1:", sum(labels_2)," 2:" , len(labels_2)-sum(labels_2))
+    # print("K::: 1:", sum(k_labels_2)," 2:" , len(k_labels_2)-sum(k_labels_2))
+    # print("AGg::: 1:", sum(agg_labels_2)," 2:" , len(agg_labels_2)-sum(agg_labels_2))
 
-    plt.plot(idx,scores_2,  label=id + "2")
-    plt.plot(idx, scores_3, label=id + "3")
-    # plt.plot(scores_4, label='4')
+    # plt.plot(idx, k_scores_2,  label=id + "K 2")
+    # plt.plot(idx, agg_scores_2, label = "agggg")
+    plt.plot(idx, pca_scores_2, label = "PCA_2")
+    plt.plot(idx, pca_scores_3, label = "PCA_3")
+
+    ## print(agg_scores_2)
+
+
     plt.legend()
 
     
@@ -137,10 +190,14 @@ def cluster_analysis(underlying_data, id):
 
 
 if __name__ == '__main__':
-    data, path = cc.preprossessing()
+    fromPolis = True
 
-    cluster_analysis(data,"cleaned_data")
-    plt.savefig("tmp/sil_" + path+ ".pdf")
+    sub_dir = pre.get_all_sub_dir()
+    for sub in sub_dir:
+        data, path = pre.preprossessing(fromPolis, False, sub)
+
+        cluster_analysis(data,"cleaned_data")
+        plt.savefig("figures/PCA_cluster/sil_" + path+ ".pdf")
 
 
     pass
