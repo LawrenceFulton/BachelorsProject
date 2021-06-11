@@ -7,6 +7,7 @@ from sklearn import linear_model
 import statsmodels.api as sm
 from scipy import stats
 from matplotlib import pyplot as plt
+import preprocessing as pre
 
 def count_majority_vote(array):
     out = []
@@ -19,9 +20,6 @@ def count_majority_vote(array):
 
 
 def get_polis_std():
-
-    directory ='../polis/openData'
-    sub_dir = next(os.walk(directory))[1]
     out = pd.DataFrame([], columns = ['Dataset name',
                                         'No. of participants',
                                         'No. of comments', 
@@ -31,18 +29,13 @@ def get_polis_std():
                                         'vote_of_majority']                                        
                         )
 
-    for sub in sub_dir:
-        if sub == '.git':
-            continue
-        
-        complete = directory + "/" + sub
-        # print(complete)
-        df = pd.read_csv(complete +  "/votes.csv")
 
-        df = df.sort_values(by = 'timestamp')
-        df = df.drop(['datetime'], axis = 1)
-        df = df.drop(['timestamp'], axis = 1)
-        df = df.values
+
+    sub_dir = pre.get_all_sub_dir()
+    for sub in sub_dir:
+
+        # print(complete)
+        df,_ = pre.preprossessing(True, True, sub)
 
         # print(df)
         len_std = df.shape[0]
@@ -50,9 +43,12 @@ def get_polis_std():
         sum_count_of_majority = 0
 
         for i in range(max(df[:,0])):
-
+            # getting a mask of all the comments with id == i
             mask = df[:, 0] == int(i)
+
+            # reducing the dataset given the mask
             small_df = df[mask, :]
+            
             len_small_df = small_df.shape[0]
 
 
@@ -61,9 +57,6 @@ def get_polis_std():
                 votes_small_df = small_df[:,2]
                 # hist = np.histogram(votes_small_df, bins=3)[0]
                 count_of_majority_small_df = count_majority_vote(votes_small_df)
-
-
-
 
                 std_small_df = np.std(small_df[:,2])
                 # print(std_small_df)
@@ -97,7 +90,7 @@ def get_polis_std():
                                     'std_dev', 
                                     'ratio_accepted',
                                     'vote_of_majority'])
-        out = out.append(new_entry)
+        out = out.append(new_entry, ignore_index=True)
 
 
 
@@ -217,6 +210,111 @@ def plot_data_against_std():
     plt.savefig("tmp/scatter_participants_ratio")
     plt.close()
 
+def regression_clustering():
+
+    df = pd.read_csv('tmp/sil_scores.csv')
+
+    print(df)
+    ## normlising data 
+    for column in df.columns:
+        df[column] = df[column]  / df[column].abs().max()
+
+
+    # df = df.values
+    X = df[['length', 'n_cmt', "n_per"]]
+    y = df['sil_score']
+
+    regr = linear_model.LinearRegression()
+    regr.fit(X, y) 
+    print(regr.coef_)
+
+
+    X2 = sm.add_constant(X)
+    est = sm.OLS(y, X2)
+    est2 = est.fit()
+    print(est2.summary())
+
+
+    pass
+
+def adv_regression_polis():
+    directory ='data/regression_data/std'
+    # sub_dir = next(os.walk(directory))[1]
+
+    file_names = os.listdir(directory)
+    main_df = pd.DataFrame(columns= ["n_vote", "std"])
+
+    for file in file_names:
+        df = pd.read_csv(directory +"/" + file)
+        df = df.drop(df.columns[0], axis=1)
+
+
+
+
+        main_df = main_df.append(df, ignore_index = True)
+
+        for column in df.columns:
+            df[column] = df[column]  / df[column].abs().max()
+
+
+
+        # df = df.values
+        X = df[['n_vote']]
+        y = df['std']
+
+        regr = linear_model.LinearRegression()
+        regr.fit(X, y) 
+        print(regr.coef_)
+
+
+        X2 = sm.add_constant(X)
+        est = sm.OLS(y, X2)
+        est2 = est.fit()
+        print(est2.summary())
+
+
+
+
+    return
+
+        
+    df = main_df
+
+    print(df)
+
+    ## normlising data 
+    for column in df.columns:
+        df[column] = df[column]  / df[column].abs().max()
+
+
+
+    # df = df.values
+    X = df[['n_vote']]
+    y = df['std']
+
+    # print("LENGTH OF ALL:" , len(y))
+
+    # plt.scatter(X,y)
+    # plt.xlabel("votes")
+    # plt.ylabel("std")
+    # plt.savefig("tmp/scatter_all_data")
+
+
+    regr = linear_model.LinearRegression()
+    regr.fit(X, y) 
+    print(regr.coef_)
+
+
+    X2 = sm.add_constant(X)
+    est = sm.OLS(y, X2)
+    est2 = est.fit()
+    print(est2.summary())
+
+
+
+
+    pass
+
 
 
     
@@ -225,4 +323,6 @@ if __name__ == '__main__':
     # regression_polis()
     # plot_data_against_std()
     # get_polis_ratio_of_votes()
-    get_polis_n_votes()
+    # get_polis_n_votes()
+    # regression_clustering()
+    adv_regression_polis()

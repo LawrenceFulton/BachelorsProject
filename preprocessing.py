@@ -29,7 +29,7 @@ def preprossessing(fromPolis = False, onCluster = False, path = ""):
             # path = "vtaiwan.uberx"        
 
         if onCluster:
-            df = pd.read_csv("/openData/" + path + "/votes.csv")
+            df = pd.read_csv("openData/" + path + "/votes.csv")
         else:
             df = pd.read_csv("../polis/openData/" + path + "/votes.csv")
 
@@ -41,7 +41,7 @@ def preprossessing(fromPolis = False, onCluster = False, path = ""):
         df = df.values.astype(int)
 
         if onCluster:
-            cmt = pd.read_csv("/openData/" + path + "/comments.csv")
+            cmt = pd.read_csv("openData/" + path + "/comments.csv")
         else:
             cmt = pd.read_csv("../polis/openData/" + path + "/comments.csv")
 
@@ -65,7 +65,7 @@ def preprossessing(fromPolis = False, onCluster = False, path = ""):
         ### delete all people which aren't included in the clustering 
 
         if onCluster:
-            pts = pd.read_csv("/openData/" + path + "/participants-votes.csv")
+            pts = pd.read_csv("openData/" + path + "/participants-votes.csv")
         else:
             pts = pd.read_csv("../polis/openData/" + path + "/participants-votes.csv")
 
@@ -83,9 +83,15 @@ def preprossessing(fromPolis = False, onCluster = False, path = ""):
         df = cleaned_df
 
     else:
-        path = "vote_hist_72"
+        if path == "":
+            path = "vote_hist_71"
+        else:
+            if type(path) == int:
+                path = str(path)
+            path = "vote_hist_" + path
         # path = "vote_hist_backup"
 
+        print(path)
         df = pd.read_csv("data/" + path + '.csv')
 
         df.columns = ['idx', 'comment-id', 'voter-id', 'vote']

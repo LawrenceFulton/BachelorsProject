@@ -11,6 +11,8 @@ Takes in the data of one of the openData provided by polis and continuously afte
 and creates a plot out of this development.
 '''
 
+TO_CSV = True
+
 
 
 def cum_mean(df,path):
@@ -22,10 +24,19 @@ def cum_mean(df,path):
     cum_sum = np.cumsum(sorted_votes)
     cum_sum_mean = cum_sum / np.arange(1, len(sorted_votes)+1)
 
-    cum_sum_mean = cum_sum_mean[50:] 
+    start_point = 50
+    cum_sum_mean = cum_sum_mean[start_point:] 
+    len_votes = len(cum_sum_mean)
+    idx = np.arange(start_point, start_point + len_votes)
 
+    if TO_CSV:
+        a = pd.DataFrame(columns= ["n_vote", "mean"])
+        for i in range(0,len_votes, 10):
+            a = a.append({"n_vote": i, "mean": cum_sum_mean[i] }, ignore_index = True)
 
-    plt.plot(cum_sum_mean)
+        a.to_csv("data/regression_data/mean/"+path+".csv")
+
+    plt.plot(idx, cum_sum_mean)
     plt.xlabel("votes")
     plt.ylabel("mean of votes")
     plt.savefig("figures/cum_mean_"+path+".pdf")
@@ -84,9 +95,20 @@ def cum_std(df, path):
 
     plt.plot(out_consensus)
     plt.xlabel('votes')
-    plt.ylabel('percentage of votes in the majority')
+    plt.ylabel('standard deviation of votes')
     plt.savefig("figures/cum_std_" + path + ".pdf")
     plt.close()
+
+
+    if TO_CSV:
+        len_votes = len(out_consensus)
+        a = pd.DataFrame(columns= ["n_vote", "std"])
+        for i in range(50,len_votes, 10):
+            a = a.append({"n_vote": i, "std": out_consensus[i] }, ignore_index = True)
+
+
+        a.to_csv("data/regression_data/std/"+path+".csv")
+
 
 def cum_own_metric(df,path):
 
@@ -145,6 +167,17 @@ def cum_own_metric(df,path):
     plt.ylabel('metric of votes ')
     plt.savefig("figures/cum_own_metric_" + path + ".pdf")
     plt.close()
+
+    if TO_CSV:
+        len_votes = len(out_consensus)
+        a = pd.DataFrame(columns= ["n_vote", "std"])
+        for i in range(50,len_votes, 10):
+            a = a.append({"n_vote": i, "std": out_consensus[i] }, ignore_index = True)
+
+        a.to_csv("data/regression_data/own_metric/"+path+".csv")
+
+
+
     return out_consensus
 
 
@@ -219,10 +252,15 @@ def mean_cum_own_metric():
 
 
 if __name__ == '__main__':
-    fromPolis = True
-    df, path = pre.preprossessing()
-    cum_mean(df,path)
-    cum_std(df,path)
-    cum_own_metric(df,path)
-    # mean_cum_own_metric()
+
+
+    sub_dir = pre.get_all_sub_dir()
+
+    for sub in sub_dir:    
+        fromPolis = True
+        df, path = pre.preprossessing(fromPolis, False, sub)
+        # cum_mean(df,path)
+        cum_std(df,path)
+        # cum_own_metric(df,path)
+        # mean_cum_own_metric()
     
