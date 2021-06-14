@@ -1,11 +1,9 @@
 import numpy as np
-from numpy.core.fromnumeric import argmax
 from numpy.linalg import norm
 from sklearn.decomposition import PCA
 import pandas as pd
 import random as rd
 import sys
-import test
 
 
 PASS = 0
@@ -14,22 +12,22 @@ ACCEPT = 1
 POLIS = 0
 EPS = 1
 
-def data_creation(n_indi, n_decision, n_proto = 2, id = ""):
+def data_creation(n_indi, n_cmt, n_proto = 2, id = ""):
     
     protos = [0] * n_proto
     
     for i in range(n_proto):
-        protos[i] =  np.random.uniform(-1,1,n_decision)
+        protos[i] =  np.random.uniform(-1,1,n_cmt)
     
 
 
-    data = np.zeros((n_indi,n_decision))
+    data = np.zeros((n_indi,n_cmt))
 
     for r in range(n_indi):
         proto_to_follow = rd.randint(0,n_proto-1)
 
         d = protos[proto_to_follow]
-        noise = np.random.normal(0, 0.7, n_decision)
+        noise = np.random.normal(0, 0.7, n_cmt)
 
 
         data[r,:] = d + noise
@@ -156,44 +154,47 @@ def get_comment_eps(has_seen, cur_per, action_value, eps):
 
     return cur_cmt
 
-def voting_alg(underlying_opinion: np.array, comment_routing, id):
+def voting_alg(underlying_opinion: np.array, comment_routing, id, mul, sum_vote_0 = ""):
     # the number of participants    
-    n_participant = underlying_opinion.shape[0]
+    n_per = underlying_opinion.shape[0]
     
     # the total disussions which can be proposed
-    n_votes = underlying_opinion.shape[1]
+    n_cmt = underlying_opinion.shape[1]
 
-    print(n_participant, n_votes)
+    print(n_per, n_cmt)
 
     # the number of admins 
     n_admins = 2
     # the number of votes the admins create and also vote on
-    n_pregiven_votes = n_votes
+    n_admin_cmt = n_cmt
     
     # vote_dist gives the likellyhood for each person to vote
     # sum_votes gives the total amount of votes we want to investigate
-    vote_dist, sum_vote = get_distribution(n_participant-n_admins, n_votes)
-    person_list = list(range(n_admins, n_participant))
+    vote_dist, sum_vote = get_distribution(n_per-n_admins, n_cmt)
+    person_list = list(range(n_admins, n_per))
 
+    if sum_vote_0 != "":
+        sum_vote = sum_vote_0
 
+    print("SUMVOTE ==== " , sum_vote)
 
     # the votes which are available 
-    known_votes = np.zeros([n_participant,n_votes])
+    known_votes = np.zeros([n_per,n_cmt])
     # if a user has seen a particular question 
-    has_seen = np.zeros([n_participant,n_votes],dtype='bool')
+    has_seen = np.zeros([n_per,n_cmt],dtype='bool')
     
 
     # the vote history, which at some point can be imported to continuosConsensus.py
     vote_hist = np.zeros((1,3))
 
     # Pass / Accepted / Seen, taken from the original clj code, will continuously be updated 
-    P = np.zeros(n_votes)
-    A = np.zeros(n_votes)
-    S = np.zeros(n_votes)
+    P = np.zeros(n_cmt)
+    A = np.zeros(n_cmt)
+    S = np.zeros(n_cmt)
     
     # needed for EPS
     eps = 0.2
-    action_value = np.random.uniform(-0.1, 0.1, n_votes)
+    action_value = np.random.uniform(-0.1, 0.1, n_cmt)
     
 
     # init phase
@@ -203,7 +204,7 @@ def voting_alg(underlying_opinion: np.array, comment_routing, id):
 
     # admins vote on discussions 
     for admin in range(n_admins):
-        for vote in range(n_pregiven_votes):
+        for vote in range(n_admin_cmt):
 
 
             has_seen[admin,vote] = True
@@ -224,7 +225,7 @@ def voting_alg(underlying_opinion: np.array, comment_routing, id):
 
 
     ## only half of the possible votes can be decided on
-    for i in range (sum_vote):
+    for i in range (int(sum_vote)):
         if i % 1000 == 0:
             # update for the cmd 
             print("index", i)
@@ -289,20 +290,36 @@ def voting_alg(underlying_opinion: np.array, comment_routing, id):
     print("somehow finished:")
     print("known_votes,", known_votes)
     pd.DataFrame(known_votes).to_csv('data/known_votes_'+ id + '.csv')
-    pd.DataFrame(has_seen).to_csv('data/has_seen_ '+ id +'.csv')
+    pd.DataFrame(has_seen).to_csv('data/has_seen_'+ id +'.csv')
     pd.DataFrame(vote_hist).to_csv('data/vote_hist_'+ id +'.csv')
 
 
 
+def alg_based_on_condition():
+    a = np.array(pd.read_csv("data/polis_conditions.csv"))
+    mul = 5
+
+    for i in a:
+        id, name , n_cmt, n_per, n_len = i
+        if id == (1 or 5):
+            n_len = 50000
+        data = data_creation(n_per, n_cmt, 2, name)
+        print(name)
+
+
+        consensus = voting_alg(data, POLIS, name , mul, n_len)        
+
+    pass
+
 
 
 if __name__ == "__main__":
-    id = '79'
-    n_indi = 414
-    n_votes = 112  # number of different votes
-    # data = test.test_data_creation(n_indi, n_votes, 2, id)
-    data = data_creation(n_indi, n_votes, 2, id)
+    # id = '82'
+    # mul = 5
+    # n_per = 414
+    # n_cmt = 112 * mul  # number of different votes
+    # data = data_creation(n_per, n_cmt, 2, id)
 
 
-    consensus = voting_alg(data, POLIS, id)
-    
+    # consensus = voting_alg(data, POLIS, id, mul)
+    alg_based_on_condition()

@@ -3,6 +3,7 @@ from numpy.lib import median
 import pandas as pd
 import numpy as np
 import os
+import preprocessing as pre
 
 def moving_average(x, w):
     return np.convolve(x, np.ones(w), 'valid') / w
@@ -167,27 +168,55 @@ def get_mean_n_comments():
 
 
 def voting_distribution_own_data():
-    directory ='data/has_seen.csv'
+    directory ='data/has_seen_81.csv'
     # sub_dir = next(os.walk(directory))[1]
     df = pd.read_csv(directory)
 
     df = df.values[:,1:]
-    sums = np.sum(df, axis=0)
-    sort_sums = np.sort(sums)
+    sums = np.sum(df, axis=1)
+    sort_sums = np.sort(sums)[::-1]
+
     plt.plot(sort_sums)
     plt.savefig("tmp/voting_distribution_own_data")
     plt.close()
     print(df)
 
 
+def get_conditions():
+    subdir = pre.get_all_sub_dir()
+
+    a = pd.DataFrame(columns= ["dir", "len_cmt", "len_per", "len_all"])
+
+    for dir in subdir:
+        print(dir)
+        data , path = pre.preprossessing(True, False, dir)
+
+        len_all = len(data[:,0])
+        uni_per = np.unique(data[:,1])
+        uni_cmt = np.unique(data[:,0])
+
+        len_per = len(uni_per)
+        len_cmt = len(uni_cmt)
+        print(dir, "unique cmt: ", len_cmt , " unique per: " , len_per)
+        a = a.append({"dir": dir, "len_cmt": len_cmt, "len_per": len_per, "len_all": len_all}, ignore_index = True)
+
+    a.to_csv("data/polis_conditions.csv")
+
+
+
+
+    pass
+
+
 
 
 
 if __name__ == "__main__":
-    voting_distribution()
+    # voting_distribution()
     # votes_distribution()
     # get_mean_n_comments()
     # voting_distribution_own_data()
     # votes_per_comment()
+    get_conditions()
 
 

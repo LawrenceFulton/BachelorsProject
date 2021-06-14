@@ -212,16 +212,16 @@ def plot_data_against_std():
 
 def regression_clustering():
 
-    df = pd.read_csv('tmp/sil_scores.csv')
+    df = pd.read_csv('tmp/sil_scores_reg.csv')
 
     print(df)
-    ## normlising data 
+    # normlising data 
     for column in df.columns:
         df[column] = df[column]  / df[column].abs().max()
 
 
     # df = df.values
-    X = df[['length', 'n_cmt', "n_per"]]
+    X = df[["n_vote"]]
     y = df['sil_score']
 
     regr = linear_model.LinearRegression()
@@ -324,5 +324,5 @@ if __name__ == '__main__':
     # plot_data_against_std()
     # get_polis_ratio_of_votes()
     # get_polis_n_votes()
-    # regression_clustering()
-    adv_regression_polis()
+    regression_clustering()
+    # adv_regression_polis()

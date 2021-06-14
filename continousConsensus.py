@@ -11,7 +11,7 @@ Takes in the data of one of the openData provided by polis and continuously afte
 and creates a plot out of this development.
 '''
 
-TO_CSV = True
+TO_CSV = False
 
 
 
@@ -39,7 +39,7 @@ def cum_mean(df,path):
     plt.plot(idx, cum_sum_mean)
     plt.xlabel("votes")
     plt.ylabel("mean of votes")
-    plt.savefig("figures/cum_mean_"+path+".pdf")
+    plt.savefig("figures/mean/"+path+".pdf")
     plt.close()
 
 def cum_std(df, path):
@@ -93,10 +93,12 @@ def cum_std(df, path):
 
             out_consensus.append(consensus)
 
+    out_consensus = out_consensus[50:]
+
     plt.plot(out_consensus)
     plt.xlabel('votes')
     plt.ylabel('standard deviation of votes')
-    plt.savefig("figures/cum_std_" + path + ".pdf")
+    plt.savefig("figures/std/" + path + ".pdf")
     plt.close()
 
 
@@ -162,10 +164,12 @@ def cum_own_metric(df,path):
 
             out_consensus.append(consensus)
 
+    out_consensus = out_consensus[50:]
+
     plt.plot(out_consensus)
     plt.xlabel('votes')
     plt.ylabel('metric of votes ')
-    plt.savefig("figures/cum_own_metric_" + path + ".pdf")
+    plt.savefig("figures/own_metric/" + path + ".pdf")
     plt.close()
 
     if TO_CSV:
@@ -251,16 +255,31 @@ def mean_cum_own_metric():
     pass
 
 
-if __name__ == '__main__':
-
-
+def analyse_polis():
     sub_dir = pre.get_all_sub_dir()
 
     for sub in sub_dir:    
         fromPolis = True
         df, path = pre.preprossessing(fromPolis, False, sub)
-        # cum_mean(df,path)
+        cum_mean(df,path)
         cum_std(df,path)
-        # cum_own_metric(df,path)
+        cum_own_metric(df,path)
         # mean_cum_own_metric()
-    
+
+
+
+def analyse_own():
+    id = 82
+    fromPolis = False
+    df, path = pre.preprossessing(fromPolis, False, id)
+    cum_mean(df,path)
+    cum_std(df,path)    
+    cum_own_metric(df,path)
+
+
+
+if __name__ == '__main__':
+    analyse_polis() 
+
+
+    pass
