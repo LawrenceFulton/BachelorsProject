@@ -88,11 +88,10 @@ def preprossessing(fromPolis = False, onCluster = False, path = ""):
         else:
             if type(path) == int:
                 path = str(path)
-            path = "vote_hist_" + path
         # path = "vote_hist_backup"
 
         print(path)
-        df = pd.read_csv("data/" + path + '.csv')
+        df = pd.read_csv("data/vote_hist_" + path + '.csv')
 
         df.columns = ['idx', 'comment-id', 'voter-id', 'vote']
         df = df.drop('idx' ,axis=1)

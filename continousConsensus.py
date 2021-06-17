@@ -11,7 +11,7 @@ Takes in the data of one of the openData provided by polis and continuously afte
 and creates a plot out of this development.
 '''
 
-TO_CSV = False
+TO_CSV = True
 
 
 
@@ -19,7 +19,7 @@ def cum_mean(df,path):
 
     sorted_votes = df[:,2]
 
-
+    sorted_votes = (sorted_votes == 1)
     print("mean", np.mean(sorted_votes))
     cum_sum = np.cumsum(sorted_votes)
     cum_sum_mean = cum_sum / np.arange(1, len(sorted_votes)+1)
@@ -31,7 +31,7 @@ def cum_mean(df,path):
 
     if TO_CSV:
         a = pd.DataFrame(columns= ["n_vote", "mean"])
-        for i in range(0,len_votes, 10):
+        for i in range(len_votes):
             a = a.append({"n_vote": i, "mean": cum_sum_mean[i] }, ignore_index = True)
 
         a.to_csv("data/regression_data/mean/"+path+".csv")
@@ -105,12 +105,11 @@ def cum_std(df, path):
     if TO_CSV:
         len_votes = len(out_consensus)
         a = pd.DataFrame(columns= ["n_vote", "std"])
-        for i in range(50,len_votes, 10):
+        for i in range(len_votes):
             a = a.append({"n_vote": i, "std": out_consensus[i] }, ignore_index = True)
 
 
         a.to_csv("data/regression_data/std/"+path+".csv")
-
 
 def cum_own_metric(df,path):
 
@@ -175,7 +174,7 @@ def cum_own_metric(df,path):
     if TO_CSV:
         len_votes = len(out_consensus)
         a = pd.DataFrame(columns= ["n_vote", "std"])
-        for i in range(50,len_votes, 10):
+        for i in range(len_votes):
             a = a.append({"n_vote": i, "std": out_consensus[i] }, ignore_index = True)
 
         a.to_csv("data/regression_data/own_metric/"+path+".csv")

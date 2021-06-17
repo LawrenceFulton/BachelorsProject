@@ -3,7 +3,7 @@ import os
 from numpy.core.fromnumeric import argmax, shape 
 import pandas as pd
 import sys
-from sklearn import linear_model
+from sklearn import cluster, linear_model
 import statsmodels.api as sm
 from scipy import stats
 from matplotlib import pyplot as plt
@@ -212,7 +212,7 @@ def plot_data_against_std():
 
 def regression_clustering():
 
-    df = pd.read_csv('tmp/sil_scores_reg.csv')
+    df = pd.read_csv('tmp/own_sil_scores_reg.csv')
 
     print(df)
     # normlising data 
@@ -315,6 +315,21 @@ def adv_regression_polis():
 
     pass
 
+def cluster_corr():
+    df_p = pd.read_csv('tmp/sil_scores_reg.csv')
+    df_p = df_p.drop(df_p.columns[0], axis=1)
+    df_o = pd.read_csv('tmp/own_sil_scores_reg.csv', skiprows=0)
+    df_o = df_o.drop(df_o.columns[0], axis=1)
+
+    merge_df = pd.merge(df_p, df_o, on=["path", "n_vote"])
+    X = merge_df['sil_score_x']
+    Y = merge_df['sil_score_y']
+    
+    corr, _ = stats.pearsonr(X,Y)
+    print(corr)
+
+
+
 
 
     
@@ -324,5 +339,6 @@ if __name__ == '__main__':
     # plot_data_against_std()
     # get_polis_ratio_of_votes()
     # get_polis_n_votes()
-    regression_clustering()
+    # regression_clustering()
     # adv_regression_polis()
+    cluster_corr()

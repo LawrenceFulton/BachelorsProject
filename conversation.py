@@ -301,13 +301,15 @@ def alg_based_on_condition():
 
     for i in a:
         id, name , n_cmt, n_per, n_len = i
-        if id == (1 or 5):
-            n_len = 50000
+        if id != 5:
+            continue
+        n_len = 50000
+
         data = data_creation(n_per, n_cmt, 2, name)
         print(name)
 
 
-        consensus = voting_alg(data, POLIS, name , mul, n_len)        
+        voting_alg(data, POLIS, name , mul, n_len)        
 
     pass
 

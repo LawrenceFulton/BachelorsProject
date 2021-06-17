@@ -49,7 +49,7 @@ def cluster_analysis(underlying_data, path, a = None):
     idx = []
     cnt = 0
     inc = 10
-    goal = 2000
+    goal = 1000
 
     print("length ", underlying_data.shape[0])
 
@@ -86,7 +86,7 @@ def cluster_analysis(underlying_data, path, a = None):
 
             goal += inc
             inc += 1
-            if len(d2) == 0:
+            if (len(d2) == 0) or (sum(bool_cnt_cmt) < 3) or (sum(bool_cnt_per) < 3)  :
                 continue
             # print(d2)
 
@@ -102,6 +102,7 @@ def cluster_analysis(underlying_data, path, a = None):
             
 
 
+
             red_data_2 = PCA(n_components=2).fit_transform(d2)
             pca_labels_2 = cls.k_clustering(red_data_2)
             pca_score_2 = cls.silhouette_score(red_data_2, pca_labels_2)
@@ -109,7 +110,7 @@ def cluster_analysis(underlying_data, path, a = None):
 
             if type(a) == pd.DataFrame:
 
-                a = a.append({"n_vote": cnt, "sil_score": pca_score_2}, ignore_index = True)
+                a = a.append({"path":path, "n_vote": cnt, "sil_score": pca_score_2}, ignore_index = True)
 
 
             # red_data_3 = PCA(n_components=2).fit_transform(d2)
@@ -135,7 +136,7 @@ def cluster_analysis(underlying_data, path, a = None):
             print("index", cnt, " and inc ", inc)
         
 
-        if cnt > 150000:
+        if cnt > 50000:
             break
 
 
@@ -211,7 +212,7 @@ def cluster_analysis(underlying_data, path, a = None):
 def fromPolisData():
     fromPolis = True
 
-    a = pd.DataFrame(columns= ["n_vote", "sil_score"])
+    a = pd.DataFrame(columns= ["path", "n_vote", "sil_score"])
 
     sub_dir = pre.get_all_sub_dir()
 
@@ -219,10 +220,6 @@ def fromPolisData():
         data, path = pre.preprossessing(fromPolis, False, sub)
 
         score, a = cluster_analysis(data,path, a)
-        n_cmt = max(data[:,0])
-        n_per = max(data[:,1])
-
-        # a = a.append({"n_vote": data.shape[0], "sil_score": score, "n_cmt": n_cmt, "n_per": n_per }, ignore_index = True)
 
 
     a.to_csv("tmp/sil_scores_reg.csv")    
@@ -235,19 +232,34 @@ def fromPolisData():
 
 def notFromPolisData():
     fromPolis = False
-    path = pre.get_all_sub_dir()[1]
-    data, path = pre.preprossessing(fromPolis, False,path )
-    print(data)
-    score = cluster_analysis(data,path)
-    print(score)
-    plt.savefig("figures/PCA_cluster/own_sil_"+ path +".pdf")
-    plt.close()
+    paths = pre.get_all_sub_dir()
+    counter = 0
+    a = pd.DataFrame(columns= ["path","n_vote", "sil_score"])
 
+    for path in paths:
+        data, path = pre.preprossessing(fromPolis, False,path )
+        score,a = cluster_analysis(data,path,a)
+
+
+    a.to_csv("tmp/own_sil_scores_reg.csv")    
+    plt.savefig("figures/PCA_cluster/own_sil_all.pdf")
+    plt.close()
     pass
+
+
+# def test():
+#     fromPolis = False
+#     path_5 = pre.get_all_sub_dir()[5]
+
+#     data, path = pre.preprossessing(fromPolis, False,path_5 )
+#     score,a = cluster_analysis(data,path)
+
+
 
 
 
 if __name__ == '__main__':
     notFromPolisData()
-    # fromPolisData()
+    fromPolisData()
+    # test()
     pass
