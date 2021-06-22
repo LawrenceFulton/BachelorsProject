@@ -1,12 +1,14 @@
 import numpy as np
 from matplotlib import pyplot as plt
 import pandas as pd
+from scipy.sparse import data
+from sklearn import cluster
 import continousConsensus as cc
 from sklearn.metrics import silhouette_score
 from sklearn.decomposition import PCA
 import preprocessing as pre
 import clustering as cls
-
+import conversation as conv
 import mca
 
 
@@ -86,7 +88,7 @@ def cluster_analysis(underlying_data, path, a = None):
 
             goal += inc
             inc += 1
-            if (len(d2) == 0) or (sum(bool_cnt_cmt) < 3) or (sum(bool_cnt_per) < 3)  :
+            if (len(d2) == 0) or (sum(bool_cnt_cmt) < 100) or (sum(bool_cnt_per) < 100)  :
                 continue
             # print(d2)
 
@@ -104,13 +106,28 @@ def cluster_analysis(underlying_data, path, a = None):
 
 
             red_data_2 = PCA(n_components=2).fit_transform(d2)
+            # print(red_data_2)
             pca_labels_2 = cls.k_clustering(red_data_2)
             pca_score_2 = cls.silhouette_score(red_data_2, pca_labels_2)
-            pca_scores_2.append(pca_score_2)
+
+
+
+            red_data_3 = PCA(n_components=2).fit_transform(d2)
+            pca_labels_3 = cls.k_clustering(red_data_3,3)
+            pca_score_3 = cls.silhouette_score(red_data_3, pca_labels_3)
+            # pca_scores_3.append(pca_score_3)
+
+
+            red_data_4 = PCA(n_components=2).fit_transform(d2)
+            pca_labels_4 = cls.k_clustering(red_data_4,4)
+            pca_score_4 = cls.silhouette_score(red_data_4, pca_labels_4)
+
+            pca_scores_2.append(max(pca_score_2, pca_score_3, pca_score_4))
+
 
             if type(a) == pd.DataFrame:
 
-                a = a.append({"path":path, "n_vote": cnt, "sil_score": pca_score_2}, ignore_index = True)
+                a = a.append({"path":path, "n_vote": cnt, "sil_score": max(pca_score_2, pca_score_3)}, ignore_index = True)
 
 
             # red_data_3 = PCA(n_components=2).fit_transform(d2)
@@ -136,8 +153,8 @@ def cluster_analysis(underlying_data, path, a = None):
             print("index", cnt, " and inc ", inc)
         
 
-        if cnt > 50000:
-            break
+        # if cnt > 50000:
+        #     break
 
 
 
@@ -208,7 +225,6 @@ def cluster_analysis(underlying_data, path, a = None):
     pass
 
 
-
 def fromPolisData():
     fromPolis = True
 
@@ -229,21 +245,23 @@ def fromPolisData():
     plt.close()
 
 
-
 def notFromPolisData():
     fromPolis = False
-    paths = pre.get_all_sub_dir()
+    paths = pre.get_all_sub_dir()[4:5]
     counter = 0
     a = pd.DataFrame(columns= ["path","n_vote", "sil_score"])
 
     for path in paths:
+        print(path)
         data, path = pre.preprossessing(fromPolis, False,path )
         score,a = cluster_analysis(data,path,a)
+        plt.savefig("figures/PCA_cluster/own_sil_"+ path + ".pdf")
 
 
-    a.to_csv("tmp/own_sil_scores_reg.csv")    
-    plt.savefig("figures/PCA_cluster/own_sil_all.pdf")
-    plt.close()
+
+    # a.to_csv("tmp/own_sil_scores_reg.csv")    
+    # plt.savefig("figures/PCA_cluster/own_sil_all.pdf")
+    # plt.close()
     pass
 
 
@@ -260,6 +278,27 @@ def notFromPolisData():
 
 if __name__ == '__main__':
     notFromPolisData()
-    fromPolisData()
+    # fromPolisData()
     # test()
+    # data = conv.data_creation(414,112,2, "test")
+    
+    # data = pd.read_csv("tmp/random_data.csv")
+    # data = data.drop(columns=data.columns[0],axis=1)
+    # print(data)
+    # data = data.astype(int)
+    # data = data.values
+    # cluster_analysis(data, "test" )
+
+
+
+
+    # red_data_2 = PCA(n_components=2).fit_transform(data)
+    # # print(red_data_2)
+    # print(red_data_2.shape)
+    # pca_labels_2 = cls.k_clustering(red_data_2)
+    # pca_score_2 = cls.silhouette_score(red_data_2, pca_labels_2)
+    # print(pca_score_2)
+
+    plt.savefig("tmp/test12.png")
+
     pass

@@ -11,7 +11,7 @@ Takes in the data of one of the openData provided by polis and continuously afte
 and creates a plot out of this development.
 '''
 
-TO_CSV = True
+TO_CSV = False
 
 
 
@@ -173,9 +173,9 @@ def cum_own_metric(df,path):
 
     if TO_CSV:
         len_votes = len(out_consensus)
-        a = pd.DataFrame(columns= ["n_vote", "std"])
+        a = pd.DataFrame(columns= ["n_vote", "own_metric"])
         for i in range(len_votes):
-            a = a.append({"n_vote": i, "std": out_consensus[i] }, ignore_index = True)
+            a = a.append({"n_vote": i, "own_metric": out_consensus[i] }, ignore_index = True)
 
         a.to_csv("data/regression_data/own_metric/"+path+".csv")
 
@@ -260,8 +260,8 @@ def analyse_polis():
     for sub in sub_dir:    
         fromPolis = True
         df, path = pre.preprossessing(fromPolis, False, sub)
-        cum_mean(df,path)
-        cum_std(df,path)
+        # cum_mean(df,path)
+        # cum_std(df,path)
         cum_own_metric(df,path)
         # mean_cum_own_metric()
 
@@ -269,16 +269,19 @@ def analyse_polis():
 
 def analyse_own():
     id = 82
-    fromPolis = False
-    df, path = pre.preprossessing(fromPolis, False, id)
-    cum_mean(df,path)
-    cum_std(df,path)    
-    cum_own_metric(df,path)
+    sub_dir = pre.get_all_sub_dir()
+
+    for sub in sub_dir:
+        fromPolis = False
+        df, path = pre.preprossessing(fromPolis, False, sub)
+        # cum_mean(df,path)
+        # cum_std(df,path)    
+        cum_own_metric(df,path)
 
 
 
 if __name__ == '__main__':
     analyse_polis() 
-
+    # analyse_own()
 
     pass

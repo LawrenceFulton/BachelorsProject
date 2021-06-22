@@ -8,6 +8,13 @@ import statsmodels.api as sm
 from scipy import stats
 from matplotlib import pyplot as plt
 import preprocessing as pre
+from statsmodels.tsa.arima.model import ARIMA
+from statsmodels.tsa.stattools import adfuller
+import pymannkendall as mk
+
+
+
+
 
 def count_majority_vote(array):
     out = []
@@ -238,59 +245,103 @@ def regression_clustering():
     pass
 
 def adv_regression_polis():
-    directory ='data/regression_data/std'
-    # sub_dir = next(os.walk(directory))[1]
+    # metric = "own_metric"
 
-    file_names = os.listdir(directory)
-    main_df = pd.DataFrame(columns= ["n_vote", "std"])
+    metric_list = ["std", "mean", "own_metric"]
 
-    for file in file_names:
-        df = pd.read_csv(directory +"/" + file)
-        df = df.drop(df.columns[0], axis=1)
+    slope_arr =np.zeros([3,12])
+    cnt_0 = -1
+    cnt_1 = -1
+    for metric in metric_list:
+        cnt_0 += 1
+        cnt_1 = -1
+        directory ='data/regression_data/' + metric
+        # sub_dir = next(os.walk(directory))[1]
 
+        file_names = os.listdir(directory)
+        main_df = pd.DataFrame(columns= ["n_vote", metric])
 
+        for file in file_names:
+            cnt_1 += 1
+            print(file +  ": " , end= "")
+            df = pd.read_csv(directory +"/" + file)
+            df = df.drop(df.columns[0], axis=1)
 
+            # df['n_vote'] = df['n_vote'] / df['n_vote'].abs().max()
 
-        main_df = main_df.append(df, ignore_index = True)
+            df = df.head(35000)
 
-        for column in df.columns:
-            df[column] = df[column]  / df[column].abs().max()
+            # main_df = main_df.append(df, ignore_index = True)
 
-
-
-        # df = df.values
-        X = df[['n_vote']]
-        y = df['std']
-
-        regr = linear_model.LinearRegression()
-        regr.fit(X, y) 
-        print(regr.coef_)
-
-
-        X2 = sm.add_constant(X)
-        est = sm.OLS(y, X2)
-        est2 = est.fit()
-        print(est2.summary())
+            # for column in df.columns:
+            #     df[column] = df[column]  / df[column].abs().max()
 
 
 
+            # df = df.values
+            # X = df[['n_vote']]
+            y = df[metric]
 
+            # regr = linear_model.LinearRegression()
+            # regr.fit(X, y) 
+            # print(regr.coef_)
+
+
+            # X2 = sm.add_constant(X)
+            # est = sm.OLS(y, X2)
+            # est2 = est.fit()
+            # print(est2.summary())
+
+
+            # mod = sm.tsa.arima.ARIMA(y, order=(1, 0, 0))
+            # res = mod.fit()
+            # print(res.summary())
+
+
+            # res = adfuller(y)
+            # print(res)
+            
+
+            # result = mk.original_test(y)
+            # print(result)
+
+            result = mk.hamed_rao_modification_test(y)
+            # trend, h, p, z, Tau, s, var_s, slope, intercept = mk.hamed_rao_modification_test(data)
+            slope = result.slope * len(y)
+            # slope_arr.append(slope)
+            slope_arr[cnt_0, cnt_1] = slope
+
+            # print(result.trend , slope, result.p)
+
+    print(slope_arr)
+
+    plt.boxplot(slope_arr.T)
+    plt.savefig("tmp/box")
+    plt.close()
+
+    # print("M", np.mean(slope_arr)," SD:" , np.std(slope_arr))
+    # t_t = stats.ttest_1samp(slope_arr, 0)
+    # print(t_t)
+    # cohen_D = np.mean(slope_arr) / np.std(slope_arr)
+    # print(cohen_D)
+
+
+    
     return
-
         
     df = main_df
 
     print(df)
 
     ## normlising data 
-    for column in df.columns:
-        df[column] = df[column]  / df[column].abs().max()
+    # for column in df.columns:
+    #     df[column] = df[column]  / df[column].abs().max()
 
 
 
     # df = df.values
     X = df[['n_vote']]
-    y = df['std']
+    y = df[metric]
 
     # print("LENGTH OF ALL:" , len(y))
 
@@ -322,13 +373,50 @@ def cluster_corr():
     df_o = df_o.drop(df_o.columns[0], axis=1)
 
     merge_df = pd.merge(df_p, df_o, on=["path", "n_vote"])
-    X = merge_df['sil_score_x']
-    Y = merge_df['sil_score_y']
+    print(merge_df)
+    X = merge_df['n_vote']
+    Y = merge_df['sil_score_x']
     
-    corr, _ = stats.pearsonr(X,Y)
-    print(corr)
+    plt.scatter(X,Y)
+    plt.savefig("tmp/a.pdf")
 
 
+    corr, p = stats.pearsonr(X,Y)
+    print(corr, p)
+
+
+
+def con_corr(metric):
+
+    sub_dir = pre.get_all_sub_dir()
+
+    x_metric = metric + "_x"
+    y_metric = metric + "_y"
+
+    a = pd.DataFrame(columns=['n_vote', x_metric, 'set', y_metric])
+
+    for dir in sub_dir:
+        df_p = pd.read_csv('data/regression_data/'+metric+'/'+dir+'.csv')
+        df_p = df_p.drop(df_p.columns[0], axis=1)
+
+        df_o = pd.read_csv('data/own_regression_data/'+ metric+'/'+dir+'.csv')
+        df_o = df_o.drop(df_o.columns[0], axis=1)
+
+        df_p['set'] = dir
+        merge_df = pd.merge(df_p, df_o, on=["n_vote"])
+        # print(merge_df)
+        a = a.append(merge_df)
+    print(a)
+    X = a[x_metric]
+    Y = a[y_metric]
+    
+    corr, p = stats.pearsonr(X,Y)
+    print(corr, p)
+
+    plt.scatter(X,Y,s=1,marker= ",")
+    plt.savefig("tmp/a.pdf")
+
+    # a.to_csv("tmp/all_rows.csv")
 
 
 
@@ -340,5 +428,6 @@ if __name__ == '__main__':
     # get_polis_ratio_of_votes()
     # get_polis_n_votes()
     # regression_clustering()
-    # adv_regression_polis()
-    cluster_corr()
+    adv_regression_polis()
+    # cluster_corr()
+    # con_corr("own_metric")
