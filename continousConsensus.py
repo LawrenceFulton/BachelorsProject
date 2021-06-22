@@ -279,6 +279,20 @@ def analyse_own():
         cum_own_metric(df,path)
 
 
+def test():
+    df = pd.read_csv("tmp/vote_hist_american-assembly.bowling-green.csv")
+    df.columns = ['idx', 'comment-id', 'voter-id', 'vote']
+    df = df.drop('idx' ,axis=1)
+    df = df.values
+    df = df.astype(int)
+    path = "test"
+    cum_mean(df,path)
+    cum_std(df,path)
+    cum_own_metric(df,path)
+
+
+
+
 
 if __name__ == '__main__':
     analyse_polis() 

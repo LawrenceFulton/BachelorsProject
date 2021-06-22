@@ -1,7 +1,7 @@
+from sys import path
 import numpy as np
 from matplotlib import pyplot as plt
 import pandas as pd
-from scipy.sparse import data
 from sklearn import cluster
 import continousConsensus as cc
 from sklearn.metrics import silhouette_score
@@ -10,13 +10,15 @@ import preprocessing as pre
 import clustering as cls
 import conversation as conv
 import mca
+import os
+import multiprocessing
 
 
 
 
 
 
-def cluster_analysis(underlying_data, path, a = None): 
+def cluster_analysis(underlying_data, path, a = None) : 
 
     cutoff = 5
 
@@ -30,6 +32,7 @@ def cluster_analysis(underlying_data, path, a = None):
 
     ## data[cmt,per]
     data = np.zeros([max_per, max_cmt])
+    has_seen = np.zeros([max_per, max_cmt], dtype= bool)
 
 
     bool_cmt = np.zeros(max_cmt, dtype="bool")
@@ -70,8 +73,9 @@ def cluster_analysis(underlying_data, path, a = None):
 
         #update the known data matrix 
         data[per_id, cmt_id] = vote
-
+        has_seen[per_id, cmt_id] = True
     
+
         if (cnt == goal):
 
                 
@@ -88,7 +92,7 @@ def cluster_analysis(underlying_data, path, a = None):
 
             goal += inc
             inc += 1
-            if (len(d2) == 0) or (sum(bool_cnt_cmt) < 100) or (sum(bool_cnt_per) < 100)  :
+            if (len(d2) == 0) or (np.unique(d2, axis = 0).shape[0] < 10) or (sum(bool_cnt_per) < 2)  :
                 continue
             # print(d2)
 
@@ -108,26 +112,31 @@ def cluster_analysis(underlying_data, path, a = None):
             red_data_2 = PCA(n_components=2).fit_transform(d2)
             # print(red_data_2)
             pca_labels_2 = cls.k_clustering(red_data_2)
-            pca_score_2 = cls.silhouette_score(red_data_2, pca_labels_2)
+            try:
+                pca_score_2 = cls.silhouette_score(red_data_2, pca_labels_2)
+            except:
+                print(red_data_2)
+                print(pca_labels_2)
+                print(np.unique(d2, axis = 0).shape[0] )
+                exit()
 
 
 
-            red_data_3 = PCA(n_components=2).fit_transform(d2)
-            pca_labels_3 = cls.k_clustering(red_data_3,3)
-            pca_score_3 = cls.silhouette_score(red_data_3, pca_labels_3)
+
+            pca_labels_3 = cls.k_clustering(red_data_2,3)
+            pca_score_3 = cls.silhouette_score(red_data_2, pca_labels_3)
             # pca_scores_3.append(pca_score_3)
 
 
-            red_data_4 = PCA(n_components=2).fit_transform(d2)
-            pca_labels_4 = cls.k_clustering(red_data_4,4)
-            pca_score_4 = cls.silhouette_score(red_data_4, pca_labels_4)
+            pca_labels_4 = cls.k_clustering(red_data_2,4)
+            pca_score_4 = cls.silhouette_score(red_data_2, pca_labels_4)
 
             pca_scores_2.append(max(pca_score_2, pca_score_3, pca_score_4))
 
 
             if type(a) == pd.DataFrame:
 
-                a = a.append({"path":path, "n_vote": cnt, "sil_score": max(pca_score_2, pca_score_3)}, ignore_index = True)
+                a = a.append({"path":path, "n_vote": cnt, "sil_score": max(pca_score_2, pca_score_3, pca_score_4)}, ignore_index = True)
 
 
             # red_data_3 = PCA(n_components=2).fit_transform(d2)
@@ -157,48 +166,11 @@ def cluster_analysis(underlying_data, path, a = None):
         #     break
 
 
+    bool_cnt_cmt = np.where(cnt_cmt > cutoff, True, False)
+    bool_cnt_per = np.where(cnt_per > cutoff, True, False)
 
-    # red_data = PCA(n_components=2).fit_transform(d2)
-    # labels_2 = rep.k_clustring(red_data)
-    # # print("1:", sum(labels_2)," 2:" , len(labels_2)-sum(labels_2))
-    # # # s1 = silhouette_score(d2, labels_2)    
-    # # # s2 = silhouette_score(red_data, labels_2)    
-    # # # print("prepca:", s1, " postpca:",s2)
-
-
-    # red_data = PCA(n_components=2).fit_transform(d2)
-    # _, best_n = cls.ideal_n_cluster(red_data, "k")
-    # print("NICE AMOUNT OF CLUSTER agg: ", best_n)
-
-
-    # red_data = PCA(n_components=3).fit_transform(d2)
-    # _, best_n = rep.ideal_n_cluster(red_data, "agg")
-    # # print("NICE AMOUNT OF CLUSTER agg: ", best_n)
-
-
-    # fig, ax = plt.subplots()
-    # for g in np.unique(pca_labels_2):
-    #     ix = np.where(pca_labels_2 == g)
-    #     # if (g == 99 or g == 100):
-    #     #     ax.scatter(out[ix, 0], out[ix, 1], s=10, label=g)
-    #     # else:
-    #     ax.scatter(red_data_2[ix, 0], red_data_2[ix, 1], s=1, label=g)
-
-    # plt.legend()
-    # plt.savefig("tmp/pca")
-    # plt.close()
-    # pd.DataFrame(d2).to_csv("tmp/d2.csv")
-
-    # pca = PCA(n_components=2, svd_solver='full')
-    # pca.fit(d2)
-    # print(pca.explained_variance_ratio_)
-
-
-    # print("len per bool", sum(bool_per))
-    # # labels_2 = rep.clustring(d2)
-   
-    # print("K::: 1:", sum(k_labels_2)," 2:" , len(k_labels_2)-sum(k_labels_2))
-    # print("AGg::: 1:", sum(agg_labels_2)," 2:" , len(agg_labels_2)-sum(agg_labels_2))
+    d1 = has_seen[bool_cnt_per,:]
+    d2 = d1[:,bool_cnt_cmt]   
 
     # plt.plot(idx, k_scores_2,  label=id + "K 2")
     # plt.plot(idx, agg_scores_2, label = "agggg")
@@ -211,16 +183,16 @@ def cluster_analysis(underlying_data, path, a = None):
 
 
 
-    bool_cnt_cmt = np.where(cnt_cmt > cutoff, True, False)
-    bool_cnt_per = np.where(cnt_per > cutoff, True, False)
+    # bool_cnt_cmt = np.where(cnt_cmt > cutoff, True, False)
+    # bool_cnt_per = np.where(cnt_per > cutoff, True, False)
 
 
-    d1 = data[bool_cnt_per,:]
-    d2 = d1[:,bool_cnt_cmt]   
-    red_data = PCA(n_components=2).fit_transform(d2)
-    pca_labels_2 = cls.k_clustering(red_data)
-    pca_score_2 = cls.silhouette_score(red_data, pca_labels_2)
-    pca_scores_2.append(pca_score_2)
+    # d1 = data[bool_cnt_per,:]
+    # d2 = d1[:,bool_cnt_cmt]   
+    # red_data = PCA(n_components=2).fit_transform(d2)
+    # pca_labels_2 = cls.k_clustering(red_data)
+    # pca_score_2 = cls.silhouette_score(red_data, pca_labels_2)
+    # pca_scores_2.append(pca_score_2)
     return pca_score_2, a
     pass
 
@@ -265,19 +237,48 @@ def notFromPolisData():
     pass
 
 
-# def test():
-#     fromPolis = False
-#     path_5 = pre.get_all_sub_dir()[5]
+def test_fnc(sd):
 
-#     data, path = pre.preprossessing(fromPolis, False,path_5 )
-#     score,a = cluster_analysis(data,path)
+    pass
 
 
+def analyse_rd_data():
+    global paths 
+    paths = pre.get_all_sub_dir()
+
+
+    for sd in range(60,100, 10):
+        a = pd.DataFrame(columns= ["path","n_vote", "sil_score"])
+       
+        for path in paths:
+            print(path)
+            data = pd.read_csv("data/random_data/" + str(sd) + "/" +  path + ".csv")
+            data = data.drop(data.columns[0], axis=1).astype(int).values
+            _, a = cluster_analysis(data, path , a)
+        
+        
+        a.to_csv("data/sil_scores/rd/" + str(sd) + ".csv")
+
+
+
+def test():
+    fromPolis = False
+    all_path = pre.get_all_sub_dir()
+
+    a = []
+    for path in all_path:
+
+        data, path = pre.preprossessing(fromPolis, False,path )
+        b = cluster_analysis(data,path)
+        a.append(b)
+
+    print(np.mean(a))
+    print(np.median(a))
 
 
 
 if __name__ == '__main__':
-    notFromPolisData()
+    # notFromPolisData()
     # fromPolisData()
     # test()
     # data = conv.data_creation(414,112,2, "test")
@@ -299,6 +300,7 @@ if __name__ == '__main__':
     # pca_score_2 = cls.silhouette_score(red_data_2, pca_labels_2)
     # print(pca_score_2)
 
-    plt.savefig("tmp/test12.png")
+    # plt.savefig("tmp/test12.png")
 
+    analyse_rd_data()
     pass

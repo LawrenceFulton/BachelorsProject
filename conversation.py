@@ -305,7 +305,7 @@ def voting_alg(underlying_opinion: np.array, comment_routing, id, mul, sum_vote_
     pd.DataFrame(has_seen).to_csv(path+'/has_seen_'+ id +'.csv')
     pd.DataFrame(vote_hist).to_csv(path+'/vote_hist_'+ id +'.csv')
 
-def rd_voting(underlying_opinion: np.array):
+def rd_voting(underlying_opinion: np.array, n_len, path):
     # the number of participants    
     n_per = underlying_opinion.shape[0]
     
@@ -322,7 +322,7 @@ def rd_voting(underlying_opinion: np.array):
     # the vote history, which at some point can be imported to continuosConsensus.py
     vote_hist = np.zeros((1,3))
 
-    for _ in range(n_cmt * n_per):
+    for i in range(n_len):
         cur_per = rd.randint(0,n_per-1)
         cur_cmt = rd.randint(0,n_cmt-1)
 
@@ -337,15 +337,14 @@ def rd_voting(underlying_opinion: np.array):
         new_entry = new_entry.reshape(1,3)
 
         vote_hist = np.append(vote_hist, new_entry, axis=0)
-
     vote_hist = np.delete(vote_hist, (0), axis=0)
-    pd.DataFrame(vote_hist).to_csv("tmp/random_data.csv")
+    pd.DataFrame(vote_hist).to_csv(path + ".csv")
 
 
 
 def alg_based_on_condition():
     a = np.array(pd.read_csv("data/polis_conditions.csv"))
-    mul = 5
+    mul = 1
 
     for sd in range(20,100,10):
         for i in a:
@@ -361,16 +360,43 @@ def alg_based_on_condition():
 
     pass
 
+def rd_alg_based_on_condition():
+    a = np.array(pd.read_csv("data/polis_conditions.csv"))
+    mul = 1
+
+
+    for sd in range(20,100,10):
+        for i in a:
+            id, name , n_cmt, n_per, n_len = i
+            n_len = min(n_len, 50000)
+
+
+            data = data_creation(n_per, n_cmt, 2, name, sd)
+
+            path = "data/random_data/" + str(sd)
+
+            try: 
+                os.mkdir(path) 
+            except OSError as error: 
+                print(error) 
+            print("PRE")
+
+            file_name = path  + "/" + name
+            rd_voting(data,n_len, file_name)
+            # voting_alg(data, POLIS, name , mul, n_len, sd)        
+
+    pass
 
 
 if __name__ == "__main__":
-    id = '82'
-    mul = 1
-    n_per = 414
-    n_cmt = 112 * mul  # number of different votes
-    data = data_creation(n_per, n_cmt, 2, id)
+    # id = '82'
+    # mul = 1
+    # n_per = 293
+    # n_cmt = 152 * mul  # number of different votes
+    # data = data_creation(n_per, n_cmt, 2, id)
 
 
     # consensus = voting_alg(data, POLIS, id, mul)
-    alg_based_on_condition()
+    # alg_based_on_condition()
     # rd_voting(data)
+    rd_alg_based_on_condition()

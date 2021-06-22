@@ -369,20 +369,28 @@ def adv_regression_polis():
 def cluster_corr():
     df_p = pd.read_csv('tmp/sil_scores_reg.csv')
     df_p = df_p.drop(df_p.columns[0], axis=1)
-    df_o = pd.read_csv('tmp/own_sil_scores_reg.csv', skiprows=0)
-    df_o = df_o.drop(df_o.columns[0], axis=1)
+    # df_o = pd.read_csv('tmp/own_sil_scores_reg.csv', skiprows=0)
 
-    merge_df = pd.merge(df_p, df_o, on=["path", "n_vote"])
-    print(merge_df)
-    X = merge_df['n_vote']
-    Y = merge_df['sil_score_x']
-    
-    plt.scatter(X,Y)
-    plt.savefig("tmp/a.pdf")
+    for i in range(20, 90, 10):
+
+        df_o = pd.read_csv('data/sil_scores/rd/' + str(i) + '.csv')
+        df_o = df_o.drop(df_o.columns[0], axis=1)
+
+        merge_df = pd.merge(df_p, df_o, on=["path", "n_vote"])
+        # print(merge_df)
+        X = merge_df['sil_score_x']
+        Y = merge_df['sil_score_y']
+        
+        # print(stats.shapiro(X))
+        # print(stats.shapiro(Y))
 
 
-    corr, p = stats.pearsonr(X,Y)
-    print(corr, p)
+        # plt.scatter(X,Y)
+        # plt.savefig("tmp/a.pdf")
+
+
+        corr, p = stats.pearsonr(X,Y)
+        print(i , corr, p)
 
 
 
@@ -428,6 +436,6 @@ if __name__ == '__main__':
     # get_polis_ratio_of_votes()
     # get_polis_n_votes()
     # regression_clustering()
-    adv_regression_polis()
-    # cluster_corr()
+    # adv_regression_polis()
+    cluster_corr()
     # con_corr("own_metric")
