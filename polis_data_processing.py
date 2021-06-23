@@ -3,6 +3,7 @@ import os
 from numpy.core.fromnumeric import argmax, shape 
 import pandas as pd
 import sys
+from pandas.core.reshape.merge import merge
 from sklearn import cluster, linear_model
 import statsmodels.api as sm
 from scipy import stats
@@ -371,26 +372,31 @@ def cluster_corr():
     df_p = df_p.drop(df_p.columns[0], axis=1)
     # df_o = pd.read_csv('tmp/own_sil_scores_reg.csv', skiprows=0)
 
-    for i in range(20, 90, 10):
+    for i in range(20, 31, 10):
 
-        df_o = pd.read_csv('data/sil_scores/rd/' + str(i) + '.csv')
+        df_r = pd.read_csv('data/sil_scores/rd/' + str(i) + '.csv')
+        df_r = df_r.drop(df_r.columns[0], axis=1)
+
+
+        df_o =  pd.read_csv('data/sil_scores/own/' + str(i) + '.csv')
         df_o = df_o.drop(df_o.columns[0], axis=1)
 
-        merge_df = pd.merge(df_p, df_o, on=["path", "n_vote"])
-        # print(merge_df)
+
+
+        merge_df = pd.merge(df_p, df_r, on=["path", "n_vote"])
+        print(merge_df)
+        merge_df = pd.merge(merge_df, df_o, on=["path", "n_vote"])
+        print(merge_df)
         X = merge_df['sil_score_x']
         Y = merge_df['sil_score_y']
-        
-        # print(stats.shapiro(X))
-        # print(stats.shapiro(Y))
-
-
-        # plt.scatter(X,Y)
-        # plt.savefig("tmp/a.pdf")
+        Y1 = merge_df['sil_score']
 
 
         corr, p = stats.pearsonr(X,Y)
-        print(i , corr, p)
+        print("RD:" , i , corr, p)
+
+        corr, p = stats.pearsonr(X,Y1)
+        print("own:" , i , corr, p)
 
 
 

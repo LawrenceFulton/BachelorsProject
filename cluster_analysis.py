@@ -219,27 +219,23 @@ def fromPolisData():
 
 def notFromPolisData():
     fromPolis = False
-    paths = pre.get_all_sub_dir()[4:5]
-    counter = 0
-    a = pd.DataFrame(columns= ["path","n_vote", "sil_score"])
-
-    for path in paths:
-        print(path)
-        data, path = pre.preprossessing(fromPolis, False,path )
-        score,a = cluster_analysis(data,path,a)
-        plt.savefig("figures/PCA_cluster/own_sil_"+ path + ".pdf")
+    paths = pre.get_all_sub_dir()
 
 
+    for sd in range(30, 90, 10):
+        a = pd.DataFrame(columns= ["path","n_vote", "sil_score"])
+       
+        for path in paths:
+            print(path)
+            data = pd.read_csv("data/data_by_sd/" + str(sd) + "/vote_hist_" +  path + ".csv")
+            data = data.dropna(axis=0)
+            data = data.drop(data.columns[0], axis=1).astype(int).values
+            _, a = cluster_analysis(data, path , a)
+        
+        
+        a.to_csv("data/sil_scores/own/" + str(sd) + ".csv")
 
-    # a.to_csv("tmp/own_sil_scores_reg.csv")    
-    # plt.savefig("figures/PCA_cluster/own_sil_all.pdf")
-    # plt.close()
-    pass
 
-
-def test_fnc(sd):
-
-    pass
 
 
 def analyse_rd_data():
@@ -278,7 +274,7 @@ def test():
 
 
 if __name__ == '__main__':
-    # notFromPolisData()
+    notFromPolisData()
     # fromPolisData()
     # test()
     # data = conv.data_creation(414,112,2, "test")
@@ -302,5 +298,5 @@ if __name__ == '__main__':
 
     # plt.savefig("tmp/test12.png")
 
-    analyse_rd_data()
+    # analyse_rd_data()
     pass
