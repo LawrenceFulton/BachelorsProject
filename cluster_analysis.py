@@ -217,23 +217,37 @@ def fromPolisData():
     plt.close()
 
 
-def notFromPolisData():
-    fromPolis = False
+
+def multi_help(i):
     paths = pre.get_all_sub_dir()
 
+    path = 'data/sil_scores/own' +str(i) +'th/'
+    try: 
+        os.mkdir(path) 
+    except OSError as error: 
+        print(error) 
 
-    for sd in range(30, 90, 10):
+    for sd in range(10, 100, 10):
         a = pd.DataFrame(columns= ["path","n_vote", "sil_score"])
-       
-        for path in paths:
-            print(path)
-            data = pd.read_csv("data/data_by_sd/" + str(sd) + "/vote_hist_" +  path + ".csv")
+    
+        for name in paths:
+            print(name)
+            data = pd.read_csv("data/" + str(i) + "th/" + str(sd) + "/vote_hist_" +  name + ".csv")
             data = data.dropna(axis=0)
             data = data.drop(data.columns[0], axis=1).astype(int).values
-            _, a = cluster_analysis(data, path , a)
+            _, a = cluster_analysis(data, name , a)
         
         
-        a.to_csv("data/sil_scores/own/" + str(sd) + ".csv")
+        a.to_csv(path + str(sd) + ".csv")
+
+
+
+
+def notFromPolisData():
+    pool = multiprocessing.Pool()
+
+    pool.map(multi_help, range(0,10))
+
 
 
 

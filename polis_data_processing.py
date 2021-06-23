@@ -372,7 +372,7 @@ def cluster_corr():
     df_p = df_p.drop(df_p.columns[0], axis=1)
     # df_o = pd.read_csv('tmp/own_sil_scores_reg.csv', skiprows=0)
 
-    for i in range(20, 31, 10):
+    for i in range(20, 100, 10):
 
         df_r = pd.read_csv('data/sil_scores/rd/' + str(i) + '.csv')
         df_r = df_r.drop(df_r.columns[0], axis=1)
@@ -384,12 +384,18 @@ def cluster_corr():
 
 
         merge_df = pd.merge(df_p, df_r, on=["path", "n_vote"])
-        print(merge_df)
+        # print(merge_df)
         merge_df = pd.merge(merge_df, df_o, on=["path", "n_vote"])
-        print(merge_df)
+        # print(merge_df)
         X = merge_df['sil_score_x']
         Y = merge_df['sil_score_y']
         Y1 = merge_df['sil_score']
+
+        plt.scatter(X,Y1, s= 1)
+        plt.xlabel("Given data")
+        plt.ylabel("Created data")
+        plt.savefig("tmp/scatter_" + str(i) + ".png")
+        plt.close()
 
 
         corr, p = stats.pearsonr(X,Y)
@@ -397,8 +403,6 @@ def cluster_corr():
 
         corr, p = stats.pearsonr(X,Y1)
         print("own:" , i , corr, p)
-
-
 
 def con_corr(metric):
 
@@ -431,6 +435,7 @@ def con_corr(metric):
     plt.savefig("tmp/a.pdf")
 
     # a.to_csv("tmp/all_rows.csv")
+
 
 
 

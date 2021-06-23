@@ -5,12 +5,17 @@ import pandas as pd
 import random as rd
 import sys
 import os
+import multiprocessing
 
 PASS = 0
 ACCEPT = 1
 
 POLIS = 0
 EPS = 1
+
+
+VERSION  = 6
+
 
 def data_creation(n_indi, n_cmt, n_proto = 2, id = "", sd = 0.7):
     
@@ -294,7 +299,15 @@ def voting_alg(underlying_opinion: np.array, comment_routing, id, mul, sum_vote_
     ## saving the data for further analysis
     print("somehow finished:")
     print("known_votes,", known_votes)
-    path = 'data/'+ str(sd)
+    
+    path = 'data/' +str(VERSION) +'th/'
+    try: 
+        os.mkdir(path) 
+    except OSError as error: 
+        print(error) 
+
+
+    path = path + str(sd)
     try: 
         os.mkdir(path) 
     except OSError as error: 
@@ -304,6 +317,8 @@ def voting_alg(underlying_opinion: np.array, comment_routing, id, mul, sum_vote_
     pd.DataFrame(known_votes).to_csv(path +'/known_votes_'+ id + '.csv')
     pd.DataFrame(has_seen).to_csv(path+'/has_seen_'+ id +'.csv')
     pd.DataFrame(vote_hist).to_csv(path+'/vote_hist_'+ id +'.csv')
+
+    print("has printed")
 
 def rd_voting(underlying_opinion: np.array, n_len, path):
     # the number of participants    
@@ -341,22 +356,31 @@ def rd_voting(underlying_opinion: np.array, n_len, path):
     pd.DataFrame(vote_hist).to_csv(path + ".csv")
 
 
+def mult_helper(sd):
+    for i in a:
+        id, name , n_cmt, n_per, n_len = i
+        n_len = min(n_len, 50000)
+
+
+        data = data_creation(n_per, n_cmt, 2, name, sd)
+        print(name)
+
+
+        voting_alg(data, POLIS, name , 1, n_len, sd)       
+
+
+
 
 def alg_based_on_condition():
+    global a 
     a = np.array(pd.read_csv("data/polis_conditions.csv"))
-    mul = 1
+    # mul = 1
 
-    for sd in range(20,100,10):
-        for i in a:
-            id, name , n_cmt, n_per, n_len = i
-            n_len = min(n_len, 50000)
+    pool = multiprocessing.Pool()
 
+    pool.map(mult_helper, range(20,100,10) )
 
-            data = data_creation(n_per, n_cmt, 2, name, sd)
-            print(name)
-
-
-            voting_alg(data, POLIS, name , mul, n_len, sd)        
+ 
 
     pass
 
@@ -397,6 +421,6 @@ if __name__ == "__main__":
 
 
     # consensus = voting_alg(data, POLIS, id, mul)
-    # alg_based_on_condition()
+    alg_based_on_condition()
     # rd_voting(data)
-    rd_alg_based_on_condition()
+    # rd_alg_based_on_condition()
