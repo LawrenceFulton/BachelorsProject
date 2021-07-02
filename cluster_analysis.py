@@ -2,14 +2,9 @@ from sys import path
 import numpy as np
 from matplotlib import pyplot as plt
 import pandas as pd
-from sklearn import cluster
-import continousConsensus as cc
-from sklearn.metrics import silhouette_score
 from sklearn.decomposition import PCA
 import preprocessing as pre
 import clustering as cls
-import conversation as conv
-import mca
 import os
 import multiprocessing
 
@@ -22,7 +17,7 @@ def cluster_analysis(underlying_data, path, a = None) :
 
     cutoff = 5
 
-    un = np.unique(underlying_data[:, 1])
+    un = np.unique(underlying_data[:, 1])   
     print("len of unique shiiit ", len(un))
 
 
@@ -54,7 +49,7 @@ def cluster_analysis(underlying_data, path, a = None) :
     idx = []
     cnt = 0
     inc = 10
-    goal = 1000
+    goal = 100
 
     print("length ", underlying_data.shape[0])
 
@@ -97,17 +92,6 @@ def cluster_analysis(underlying_data, path, a = None) :
             # print(d2)
 
             idx.append(cnt)
-            # k_labels_2 = rep.k_clustring(d2)
-            # k_score_2 = silhouette_score(d2, k_labels_2)
-            # k_scores_2.append(k_score_2)
-
-            # agg_labels_2 = rep.agg_clustering(d2)
-            # agg_score_2 = silhouette_score(d2, agg_labels_2)
-            # # print(agg_score_2)
-            # agg_scores_2.append(agg_score_2)
-            
-
-
 
             red_data_2 = PCA(n_components=2).fit_transform(d2)
             # print(red_data_2)
@@ -125,7 +109,6 @@ def cluster_analysis(underlying_data, path, a = None) :
 
             pca_labels_3 = cls.k_clustering(red_data_2,3)
             pca_score_3 = cls.silhouette_score(red_data_2, pca_labels_3)
-            # pca_scores_3.append(pca_score_3)
 
 
             pca_labels_4 = cls.k_clustering(red_data_2,4)
@@ -139,31 +122,14 @@ def cluster_analysis(underlying_data, path, a = None) :
                 a = a.append({"path":path, "n_vote": cnt, "sil_score": max(pca_score_2, pca_score_3, pca_score_4)}, ignore_index = True)
 
 
-            # red_data_3 = PCA(n_components=2).fit_transform(d2)
-            # pca_labels_3 = cls.k_clustering(red_data_3,3)
-            # pca_score_3 = cls.silhouette_score(red_data_3, pca_labels_3)
-            # pca_scores_3.append(pca_score_3)
-
-
-
-
-
-
-            # labels_3 = rep.clustring(d2,3)
-            # score_3 = silhouette_score(d2, labels_3)
-            # scores_3.append(score_3)
-         
-            # labels_4 = rep.clustring(d2,4)
-            # score_4 = silhouette_score(d2, labels_4)
-            # scores_4.append(score_4)
 
         if cnt % 1000 == 0:
             # update for the cmd 
             print("index", cnt, " and inc ", inc)
         
 
-        # if cnt > 50000:
-        #     break
+        if cnt > 50000:
+            break
 
 
     bool_cnt_cmt = np.where(cnt_cmt > cutoff, True, False)
@@ -172,10 +138,8 @@ def cluster_analysis(underlying_data, path, a = None) :
     d1 = has_seen[bool_cnt_per,:]
     d2 = d1[:,bool_cnt_cmt]   
 
-    # plt.plot(idx, k_scores_2,  label=id + "K 2")
-    # plt.plot(idx, agg_scores_2, label = "agggg")
+
     plt.plot(idx, pca_scores_2, label = path)
-    # plt.plot(idx, pca_scores_3, label = "PCA_3")
 
     plt.xlabel("Number of votes")
     plt.ylabel("Silhoette scorre")
@@ -183,16 +147,6 @@ def cluster_analysis(underlying_data, path, a = None) :
 
 
 
-    # bool_cnt_cmt = np.where(cnt_cmt > cutoff, True, False)
-    # bool_cnt_per = np.where(cnt_per > cutoff, True, False)
-
-
-    # d1 = data[bool_cnt_per,:]
-    # d2 = d1[:,bool_cnt_cmt]   
-    # red_data = PCA(n_components=2).fit_transform(d2)
-    # pca_labels_2 = cls.k_clustering(red_data)
-    # pca_score_2 = cls.silhouette_score(red_data, pca_labels_2)
-    # pca_scores_2.append(pca_score_2)
     return pca_score_2, a
     pass
 
@@ -208,87 +162,73 @@ def fromPolisData():
         data, path = pre.preprossessing(fromPolis, False, sub)
 
         score, a = cluster_analysis(data,path, a)
+        print(score)
 
 
-    a.to_csv("tmp/sil_scores_reg.csv")    
+    a.to_csv("tmp/sil_scores_reg_1.csv")    
 
 
-    plt.savefig("figures/PCA_cluster/sil_all.pdf")
-    plt.close()
-
-
-
-def multi_help(i):
-    paths = pre.get_all_sub_dir()
-
-    path = 'data/sil_scores/own' +str(i) +'th/'
-    try: 
-        os.mkdir(path) 
-    except OSError as error: 
-        print(error) 
-
-    for sd in range(10, 100, 10):
-        a = pd.DataFrame(columns= ["path","n_vote", "sil_score"])
-    
-        for name in paths:
-            print(name)
-            data = pd.read_csv("data/" + str(i) + "th/" + str(sd) + "/vote_hist_" +  name + ".csv")
-            data = data.dropna(axis=0)
-            data = data.drop(data.columns[0], axis=1).astype(int).values
-            _, a = cluster_analysis(data, name , a)
-        
-        
-        a.to_csv(path + str(sd) + ".csv")
-
-
+    # plt.savefig("figures/PCA_cluster/sil_all.pdf")
+    # plt.close()
 
 
 def notFromPolisData():
-    pool = multiprocessing.Pool()
+    file_names = pre.get_all_sub_dir()
 
-    pool.map(multi_help, range(0,10))
+    for i in range(4,9):
 
+        path = "data/model_data/" + str(i) + "th/"
 
+        # for sd in range(10,100, 10):
 
+        sd = 60 
 
+        a = pd.DataFrame(columns= ["path","n_vote", "sil_score"])
+    
+        for file in file_names:
+            print(file)
+            data = pd.read_csv(path + str(sd) + "/vote_hist_" +  file + ".csv")
+            data = data.dropna()
+            data = data.drop(data.columns[0], axis=1).astype(int).values
+            _, a = cluster_analysis(data, file , a)
+        
+        
+        save_path = "data/sil_scores/model/" 
+        a.to_csv(save_path + "/60/"+str(i) + "th.csv")
 
 def analyse_rd_data():
-    global paths 
-    paths = pre.get_all_sub_dir()
+    file_names = pre.get_all_sub_dir()
+    sd = "60"
 
+    for i in range(4,9):
 
-    for sd in range(60,100, 10):
+        path = "data/random_data/" + str(i) + "th/60/"
+
+        # for sd in range(60,100, 10):
         a = pd.DataFrame(columns= ["path","n_vote", "sil_score"])
-       
-        for path in paths:
-            print(path)
-            data = pd.read_csv("data/random_data/" + str(sd) + "/" +  path + ".csv")
-            data = data.drop(data.columns[0], axis=1).astype(int).values
-            _, a = cluster_analysis(data, path , a)
+    
+        for file in file_names:
+            print(file)
+            data = pd.read_csv(path +  file + ".csv")
+            data = data.drop(data.columns[0], axis=1).astype(int).values    
+            _, a = cluster_analysis(data, file , a)
         
         
-        a.to_csv("data/sil_scores/rd/" + str(sd) + ".csv")
+        save_path = "data/sil_scores/rd/" 
+
+        try: 
+            os.mkdir(save_path) 
+        except OSError as error: 
+            print(error)  
 
 
-
-def test():
-    fromPolis = False
-    all_path = pre.get_all_sub_dir()
-
-    a = []
-    for path in all_path:
-
-        data, path = pre.preprossessing(fromPolis, False,path )
-        b = cluster_analysis(data,path)
-        a.append(b)
-
-    print(np.mean(a))
-    print(np.median(a))
+        a.to_csv(save_path + "60/" +str(i) + "th.csv")
 
 
 
 if __name__ == '__main__':
-    notFromPolisData()
+    # notFromPolisData()
+    analyse_rd_data()
     # fromPolisData()
     # test()
     # data = conv.data_creation(414,112,2, "test")
@@ -312,5 +252,4 @@ if __name__ == '__main__':
 
     # plt.savefig("tmp/test12.png")
 
-    # analyse_rd_data()
     pass

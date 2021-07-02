@@ -104,9 +104,10 @@ def preprossessing(fromPolis = False, onCluster = False, path = ""):
 def get_all_sub_dir():
     directory ='openData'
     sub_dir = next(os.walk(directory))[1]
-    return sub_dir[1:]
+    sub_dir.remove(".git")
+    return sub_dir
 
 
 if __name__ == "__main__":
-    get_all_sub_dir()
+    print(get_all_sub_dir())
     

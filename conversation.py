@@ -14,14 +14,13 @@ POLIS = 0
 EPS = 1
 
 
-VERSION  = 6
+# VERSION  = 6
 
 
 def data_creation(n_indi, n_cmt, n_proto = 2, id = "", sd = 0.7):
     
-    if sd > 10:
-        sd /= 100
 
+    sd /= 100
     protos = [0] * n_proto
     
     for i in range(n_proto):
@@ -46,11 +45,28 @@ def data_creation(n_indi, n_cmt, n_proto = 2, id = "", sd = 0.7):
     data = np.where(data < cutoff, data, 1 )
     data = np.where(data > -cutoff, data, -1 )
     data = np.round(data)
-    pd.DataFrame(data).to_csv('data/underlying_data_' +id +'.csv')
+    # pd.DataFrame(data).to_csv('data/underlying_data_' +id +'.csv')
 
-    print(" 1:",np.sum(data==1))
-    print(" 0:",np.sum(data==0))
-    print("-1:",np.sum(data==-1))
+    # print(" 1:",np.sum(data==1))
+    # print(" 0:",np.sum(data==0))
+    # print("-1:",np.sum(data==-1))
+
+    path = 'data/' +str(VERSION) +'th/'
+    try: 
+        os.mkdir(path) 
+    except OSError as error: 
+        print(error) 
+
+
+    path = path + str(int(sd*100))
+    try: 
+        os.mkdir(path) 
+    except OSError as error: 
+        print(error) 
+
+
+    pd.DataFrame(data).to_csv(path+'/underlying_data_'+ id +'.csv')
+
 
     data = data.astype(int)
     return data
@@ -326,7 +342,8 @@ def rd_voting(underlying_opinion: np.array, n_len, path):
     
     # the total disussions which can be proposed
     n_cmt = underlying_opinion.shape[1]
-
+    vote_dist, sum_vote = get_distribution(n_per, n_cmt)
+    person_list = list(range(n_per))
 
     # the votes which are available 
     known_votes = np.zeros([n_per,n_cmt])
@@ -338,7 +355,8 @@ def rd_voting(underlying_opinion: np.array, n_len, path):
     vote_hist = np.zeros((1,3))
 
     for i in range(n_len):
-        cur_per = rd.randint(0,n_per-1)
+        cur_per = np.random.choice( person_list, 1, p = vote_dist)
+
         cur_cmt = rd.randint(0,n_cmt-1)
 
         if has_seen[cur_per, cur_cmt]:
@@ -348,7 +366,10 @@ def rd_voting(underlying_opinion: np.array, n_len, path):
 
         vote = underlying_opinion[cur_per, cur_cmt]
 
-        new_entry = np.array([cur_cmt, cur_per, vote])
+
+        # print(cur_cmt, cur_per, vote)
+        # print(type(cur_cmt), type(cur_per), type(vote))
+        new_entry = np.array([cur_cmt, cur_per[0], vote[0]], dtype=int)
         new_entry = new_entry.reshape(1,3)
 
         vote_hist = np.append(vote_hist, new_entry, axis=0)
@@ -373,10 +394,10 @@ def mult_helper(sd):
 
 def alg_based_on_condition():
     global a 
-    a = np.array(pd.read_csv("data/polis_conditions.csv"))
-    # mul = 1
+    a = np.array(pd.read_csv("data/polis_conditions.csv"))[::-1]    # mul = 1
 
-    pool = multiprocessing.Pool()
+    poolSize = int(os.environ['SLURM_JOB_CPUS_PER_NODE']) # Number of CPUs requested.
+    pool = multiprocessing.Pool(processes=poolSize,)
 
     pool.map(mult_helper, range(20,100,10) )
 
@@ -387,32 +408,46 @@ def alg_based_on_condition():
 def rd_alg_based_on_condition():
     a = np.array(pd.read_csv("data/polis_conditions.csv"))
     mul = 1
+    sd = 60
+    for iteration in range(4,9):
+        path = "data/random_data/" + str(iteration) + "th/"
+        try: 
+            os.mkdir(path) 
+        except OSError as error: 
+            print(error) 
 
 
-    for sd in range(20,100,10):
+        # for sd in range(20,100,10):
         for i in a:
             id, name , n_cmt, n_per, n_len = i
             n_len = min(n_len, 50000)
 
 
-            data = data_creation(n_per, n_cmt, 2, name, sd)
+            # data = data_creation(n_per, n_cmt, 2, name, sd)
+            data = pd.read_csv("data/model_data/" + str(iteration) + "th/" + str(sd) + "/underlying_data_" + name + ".csv")
+            data = data.drop(data.columns[0], axis=1).astype(int).values
 
-            path = "data/random_data/" + str(sd)
+            print(data)
+
+
+            path = "data/random_data/" + str(iteration) + "th/" + str(sd)
 
             try: 
                 os.mkdir(path) 
             except OSError as error: 
                 print(error) 
-            print("PRE")
 
             file_name = path  + "/" + name
             rd_voting(data,n_len, file_name)
-            # voting_alg(data, POLIS, name , mul, n_len, sd)        
 
     pass
 
 
 if __name__ == "__main__":
+    global VERSION
+    args = sys.argv[1:]
+    VERSION = int(args[0])
+
     # id = '82'
     # mul = 1
     # n_per = 293
@@ -421,6 +456,7 @@ if __name__ == "__main__":
 
 
     # consensus = voting_alg(data, POLIS, id, mul)
-    alg_based_on_condition()
+    # alg_based_on_condition()
     # rd_voting(data)
-    # rd_alg_based_on_condition()
+    rd_alg_based_on_condition()
+

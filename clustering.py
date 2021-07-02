@@ -2,6 +2,8 @@ import numpy as np
 from sklearn.cluster import KMeans, AgglomerativeClustering as Agg
 from sklearn.metrics import silhouette_score
 from matplotlib import pyplot as plt
+from sklearn.decomposition import PCA
+
 
 
 def ideal_n_cluster(data, alg = "k"):
@@ -49,3 +51,8 @@ def agg_clustering(data, n_clusters = 2):
     labels = Agg(n_clusters=n_clusters).fit(data).labels_
     labels = np.array(labels)
     return labels
+
+
+def dimen_reduc(data, dimen = 2):
+    out = PCA(dimen).fit_transform(data)
+    return out

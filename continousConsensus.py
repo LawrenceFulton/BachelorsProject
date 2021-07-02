@@ -38,9 +38,11 @@ def cum_mean(df,path):
 
     plt.plot(idx, cum_sum_mean)
     plt.xlabel("votes")
-    plt.ylabel("mean of votes")
-    plt.savefig("figures/mean/"+path+".pdf")
+    plt.ylabel("% of agreement")
+    plt.set_dpi(300)
+    plt.savefig("figures/mean/"+path+".png")
     plt.close()
+    print("why?")
 
 def cum_std(df, path):
 
@@ -260,9 +262,9 @@ def analyse_polis():
     for sub in sub_dir:    
         fromPolis = True
         df, path = pre.preprossessing(fromPolis, False, sub)
-        # cum_mean(df,path)
+        cum_mean(df,path)
         # cum_std(df,path)
-        cum_own_metric(df,path)
+        # cum_own_metric(df,path)
         # mean_cum_own_metric()
 
 
@@ -274,9 +276,9 @@ def analyse_own():
     for sub in sub_dir:
         fromPolis = False
         df, path = pre.preprossessing(fromPolis, False, sub)
-        # cum_mean(df,path)
+        cum_mean(df,path)
         # cum_std(df,path)    
-        cum_own_metric(df,path)
+        # cum_own_metric(df,path)
 
 
 def test():
