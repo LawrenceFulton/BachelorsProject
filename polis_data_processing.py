@@ -7,6 +7,7 @@ from pandas.core.reshape.merge import merge
 from sklearn import cluster, linear_model
 import statsmodels.api as sm
 from scipy import stats
+from scipy.spatial import distance
 from matplotlib import pyplot as plt
 from statsmodels.compat.python import with_metaclass
 import preprocessing as pre
@@ -678,25 +679,28 @@ def cluster_score_evaluation_new():
 def get_under_labels():
     a = pd.read_csv('data/polis_conditions.csv')
     a = a.drop(a.columns[0], axis=1).values
-    print(a)
+    # print(a)
     data_names = a[:,0]
     
     # read_path = 'data/'
     for i in range(9):
         read_path = 'data/model_data/' + str(i) + "th/60/underlying_data_"
+        save_path = 'data/model_data/' + str(i) + "th/60/labels_"
         for name in data_names:
 
             under_data = pd.read_csv(read_path + name + ".csv")
-            
             under_data = under_data.drop(under_data.columns[0], axis=1)
-            smoll_data = cls.dimen_reduc(under_data, 2)
+            
+            
+            # smoll_data = cls.dimen_reduc(under_data, 2)
+            # labels = cls.k_clustering(smoll_data, 2)
+
+            labels = cls.k_clustering(under_data, 2)
 
 
-
-            labels = cls.k_clustering(smoll_data, 2)
-            score = cls.silhouette_score(smoll_data, labels)
-
-            print(score)
+            # score = cls.silhouette_score(smoll_data, labels)
+            pd.DataFrame(labels).to_csv(save_path + name + ".csv")
+            # print(score)
             # print(len(labels))
 
 
@@ -706,6 +710,85 @@ def get_under_labels():
     
 
     pass
+
+
+def compare_labels():
+    names = pre.get_all_sub_dir()
+
+    dist = np.zeros([2,9,12])
+
+
+    for i in range(9):
+        under_read = "data/model_data/" + str(i) + "th/60/"
+        model_read = "data/model_data/" + str(i) + "th/60/"
+        rd_read = "data/random_data/" + str(i) + "th/60/"
+
+
+        cnt = -1
+        for name in names:
+            cnt += 1
+            under_lbs  = pd.read_csv(under_read + "labels_" + name +  ".csv")
+            under_lbs = under_lbs.dropna()
+            under_lbs = under_lbs.drop(under_lbs.columns[0], axis=1).values
+            under_lbs = under_lbs.astype(int).reshape(1,-1)
+
+            model_lbs  = pd.read_csv(model_read + "model_labels_" + name +  ".csv")
+            model_lbs = model_lbs.dropna()
+            model_lbs = model_lbs.drop(model_lbs.columns[0], axis=1).values
+            model_lbs = model_lbs.astype(int).reshape(1,-1)
+
+            rd_lbs  = pd.read_csv(rd_read + "rd_labels_" + name  +  ".csv")
+            rd_lbs = rd_lbs.dropna()
+            rd_lbs = rd_lbs.drop(rd_lbs.columns[0], axis=1).values
+            rd_lbs = rd_lbs.astype(int).reshape(1,-1)
+
+
+            dist_model_1 = distance.jaccard(under_lbs, model_lbs)
+            dist_model_2 = distance.jaccard(under_lbs, (model_lbs) - 1 * -1)
+            
+            dist_rd_1 = distance.jaccard(under_lbs, rd_lbs)
+            dist_rd_2 = distance.jaccard(under_lbs, (rd_lbs) - 1 * -1)
+
+
+            dist_model = min(dist_model_1, dist_model_2)
+            dist_rd = min(dist_rd_1, dist_rd_2)
+
+
+            # print(dist_model)
+            # print(dist_rd)
+            # print("_________________")
+
+
+
+            # print(under_lbs)
+            # print(model_lbs)
+            # print(rd_lbs)
+            # print((rd_lbs.shape == model_lbs.shape) and (model_lbs.shape == under_lbs.shape))
+            dist[0,i,cnt] = dist_model
+            dist[1,i,cnt] = dist_rd
+
+
+    
+
+
+
+    mean_dist = np.mean(dist, axis = 1)
+    print(mean_dist)
+    print("MEAN ", np.mean(mean_dist,axis=1))
+
+
+    plt.boxplot([mean_dist[0,:], mean_dist[1,:]])
+    plt.savefig("tmp/aaa.png")
+    plt.close()
+
+    t = stats.ttest_rel(mean_dist[0,:], mean_dist[1,:])
+    print(t)
+
+
+
+    print(mean_dist)
+
+
 
 
 
@@ -722,4 +805,5 @@ if __name__ == '__main__':
     # con_corr("own_metric")
     # cluster_score_evaluation()
     # cluster_score_evaluation_new()
-    get_under_labels()
+    # get_under_labels()
+    compare_labels()

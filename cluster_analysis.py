@@ -1,16 +1,14 @@
 from sys import path
 import numpy as np
 from matplotlib import pyplot as plt
+from numpy.core.fromnumeric import ptp
 import pandas as pd
+from scipy.stats.stats import mode
 from sklearn.decomposition import PCA
 import preprocessing as pre
 import clustering as cls
 import os
-import multiprocessing
-
-
-
-
+import sys
 
 
 def cluster_analysis(underlying_data, path, a = None) : 
@@ -151,6 +149,80 @@ def cluster_analysis(underlying_data, path, a = None) :
     pass
 
 
+def get_labels(hist: np.array, n_per, n_cmt):
+    # print(hist)
+    # print(max(hist[:,0]) )
+    # max_cmt = max(hist[:,0]) + 1
+    # max_per = max(hist[:,1]) + 1 
+
+    ## data[cmt,per]
+    data = np.zeros([n_per, n_cmt])
+
+    for row in hist:
+
+        cmt_id = row[0]
+        per_id = row[1]
+        vote = row[2]
+        try:
+            data[per_id, cmt_id] = vote
+        except:
+            print(row)
+            sys.exit(0)
+
+
+
+
+
+    # smoll_data = cls.dimen_reduc(data, 2)
+    # labels = cls.k_clustering(smoll_data, 2)
+    labels = cls.k_clustering(data, 2)  
+    return labels  
+
+
+
+
+
+def save_labels():
+
+    names = pre.get_all_sub_dir()
+
+    a = pd.read_csv('data/polis_conditions.csv')
+    a = a.drop(a.columns[0], axis=1).values
+
+    for i in range(9):
+
+        model_read = "data/model_data/" + str(i) + "th/60/"
+        rd_read = "data/random_data/" + str(i) + "th/60/"
+
+        # for name in names:
+        for file in a:
+            print(file)
+            name = file[0]
+            n_per = file[2]
+            n_cmt = file[1]
+
+            model_data = pd.read_csv(model_read + "vote_hist_"+ name + ".csv")
+            model_data = model_data.dropna()
+            model_data = model_data.drop(model_data.columns[0], axis=1).values
+            model_data = model_data.astype(int)
+
+            rd_data = pd.read_csv(rd_read + name + ".csv")
+            rd_data = rd_data.dropna()
+            rd_data = rd_data.drop(rd_data.columns[0], axis=1).values
+            rd_data = rd_data.astype(int)
+
+
+            model_labels = get_labels(model_data, n_per, n_cmt)
+            rd_labels = get_labels(rd_data, n_per, n_cmt)
+
+            pd.DataFrame(model_labels).to_csv(model_read + "model_labels_"  +name + ".csv" )
+            pd.DataFrame(rd_labels).to_csv(rd_read + "rd_labels_"  +name + ".csv" )
+
+            
+
+
+
+
 def fromPolisData():
     fromPolis = True
 
@@ -228,9 +300,10 @@ def analyse_rd_data():
 
 if __name__ == '__main__':
     # notFromPolisData()
-    analyse_rd_data()
+    # analyse_rd_data()
     # fromPolisData()
     # test()
+    save_labels()
     # data = conv.data_creation(414,112,2, "test")
     
     # data = pd.read_csv("tmp/random_data.csv")

@@ -13,12 +13,13 @@ ACCEPT = 1
 POLIS = 0
 EPS = 1
 
+global VERSION
+VERSION  = 100
 
-# VERSION  = 6
 
+def data_creation(n_indi, n_cmt, n_proto = 2, id = "", sd = 70):
 
-def data_creation(n_indi, n_cmt, n_proto = 2, id = "", sd = 0.7):
-    
+        
 
     sd /= 100
     protos = [0] * n_proto
@@ -28,10 +29,13 @@ def data_creation(n_indi, n_cmt, n_proto = 2, id = "", sd = 0.7):
     
 
 
+
+    # print("protos", protos)
     data = np.zeros((n_indi,n_cmt))
 
     for r in range(n_indi):
         proto_to_follow = rd.randint(0,n_proto-1)
+        
 
         d = protos[proto_to_follow]
         noise = np.random.normal(0, sd, n_cmt)
@@ -98,11 +102,18 @@ def priority_metric(A,P,S,E):
     '''
     p = (P + 1) / (S + 2)
     a = (A + 1) / (S + 2)
-    return ((1 - p) * (E + 1) * a)**2
+    b = 2 ** (3 - (S / 5))
+
+    return (a * (1 - p) * (E + 1) * (1 + b))**2
 
 def get_e(known_votes):
-    reduced_votes = PCA(n_components = 2).fit_transform(known_votes.T)
-    return norm(reduced_votes, axis = 1)
+    pca = PCA(n_components = 2)
+    pca.fit(known_votes)
+    ide = np.identity(known_votes.shape[1]) # identity matrix
+    red_ide = pca.transform(ide)  #reduced idetity
+    e = norm(red_ide, axis = 1) # e = distance from center 
+
+    return e 
 
 def get_max(vector):
     return vector.argmax(axis=0)
@@ -376,7 +387,6 @@ def rd_voting(underlying_opinion: np.array, n_len, path):
     vote_hist = np.delete(vote_hist, (0), axis=0)
     pd.DataFrame(vote_hist).to_csv(path + ".csv")
 
-
 def mult_helper(sd):
     for i in a:
         id, name , n_cmt, n_per, n_len = i
@@ -388,8 +398,6 @@ def mult_helper(sd):
 
 
         voting_alg(data, POLIS, name , 1, n_len, sd)       
-
-
 
 
 def alg_based_on_condition():
@@ -444,19 +452,18 @@ def rd_alg_based_on_condition():
 
 
 if __name__ == "__main__":
-    global VERSION
     args = sys.argv[1:]
     VERSION = int(args[0])
 
-    # id = '82'
-    # mul = 1
-    # n_per = 293
-    # n_cmt = 152 * mul  # number of different votes
-    # data = data_creation(n_per, n_cmt, 2, id)
+    id = '100'
+    mul = 1
+    n_per = 293
+    n_cmt = 152 * mul  # number of different votes
+    data = data_creation(n_per, n_cmt, 2, id)
 
 
-    # consensus = voting_alg(data, POLIS, id, mul)
+    consensus = voting_alg(data, POLIS, id, mul)
     # alg_based_on_condition()
     # rd_voting(data)
-    rd_alg_based_on_condition()
+    # rd_alg_based_on_condition()
 

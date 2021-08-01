@@ -297,7 +297,13 @@ def test():
 
 
 if __name__ == '__main__':
-    analyse_polis() 
+    # analyse_polis() 
     # analyse_own()
+
+    a = pd.read_csv('data/1th/0/underlying_data_100.csv')
+    data = a.drop(a.columns[0], axis=1).values
+
+
+    cum_mean(data, "test123")
 
     pass
