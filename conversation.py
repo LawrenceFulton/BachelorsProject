@@ -1,5 +1,5 @@
 import numpy as np
-from numpy.linalg import norm
+from numpy.linalg import LinAlgError, norm
 from sklearn.decomposition import PCA
 import pandas as pd
 import random as rd
@@ -30,14 +30,15 @@ def data_creation(n_indi, n_cmt, n_proto = 2, id = "", sd = 70):
 
 
 
-    # print("protos", protos)
+    # the whole dataset which will be known as underlying data 
     data = np.zeros((n_indi,n_cmt))
 
-    for r in range(n_indi):
-        proto_to_follow = rd.randint(0,n_proto-1)
-        
+    # a memory which proto each agent follows to use later to copare with the results
+    proto_to_follow = rd.choices(np.arange(n_proto), k = n_indi) 
 
-        d = protos[proto_to_follow]
+    for r in range(n_indi):
+        
+        d = protos[proto_to_follow[r]]
         noise = np.random.normal(0, sd, n_cmt)
 
 
@@ -70,6 +71,7 @@ def data_creation(n_indi, n_cmt, n_proto = 2, id = "", sd = 70):
 
 
     pd.DataFrame(data).to_csv(path+'/underlying_data_'+ id +'.csv')
+    pd.DataFrame(proto_to_follow).to_csv(path+'/cluster_'+ id +'.csv')
 
 
     data = data.astype(int)
@@ -106,9 +108,9 @@ def priority_metric(A,P,S,E):
 
     return (a * (1 - p) * (E + 1) * (1 + b))**2
 
-def get_e(known_votes):
-    pca = PCA(n_components = 2)
-    pca.fit(known_votes)
+def get_e(known_votes, pca):
+    # pca = PCA(n_components = 2)
+    # pca.fit(known_votes)
     ide = np.identity(known_votes.shape[1]) # identity matrix
     red_ide = pca.transform(ide)  #reduced idetity
     e = norm(red_ide, axis = 1) # e = distance from center 
@@ -129,7 +131,14 @@ def get_comment_polis(known_votes, P, A, S, has_seen, cur_per ):
     '''
     This is the way comment routing is done by polis
     '''
-    E = get_e(known_votes)
+    pca = PCA(n_components=2)
+    try:
+        pca.fit(known_votes)
+    except LinAlgError:
+        print("some mistake has happend")
+        return -1 
+
+    E = get_e(known_votes,pca)
     priority = priority_metric(A,P,S,E)
     p_has_seen = has_seen[cur_per,:][0] # mask for the current person
 
@@ -387,7 +396,8 @@ def rd_voting(underlying_opinion: np.array, n_len, path):
     vote_hist = np.delete(vote_hist, (0), axis=0)
     pd.DataFrame(vote_hist).to_csv(path + ".csv")
 
-def mult_helper(sd):
+def mult_helper(trial):
+    sd = 60
     for i in a:
         id, name , n_cmt, n_per, n_len = i
         n_len = min(n_len, 50000)
@@ -403,21 +413,31 @@ def mult_helper(sd):
 def alg_based_on_condition():
     global a 
     a = np.array(pd.read_csv("data/polis_conditions.csv"))[::-1]    # mul = 1
+    # a = 
 
-    poolSize = int(os.environ['SLURM_JOB_CPUS_PER_NODE']) # Number of CPUs requested.
-    pool = multiprocessing.Pool(processes=poolSize,)
 
-    pool.map(mult_helper, range(20,100,10) )
+    # poolSize = int(os.environ['SLURM_JOB_CPUS_PER_NODE']) # Number of CPUs requested.
+    # poolSize = 8 # Number of CPUs requested.
+    # pool = multiprocessing.Pool(processes=poolSize,)
 
+    # pool.map(mult_helper, range(0,8) )
+    mult_helper(0)
  
 
     pass
 
+
+
+
 def rd_alg_based_on_condition():
+    '''
+    Takes underlying data created in the voting algorithm function and will run a 
+    rabdin fersion of the main model 
+    '''
     a = np.array(pd.read_csv("data/polis_conditions.csv"))
     mul = 1
     sd = 60
-    for iteration in range(4,9):
+    for iteration in range(0,4):
         path = "data/random_data/" + str(iteration) + "th/"
         try: 
             os.mkdir(path) 
@@ -432,10 +452,11 @@ def rd_alg_based_on_condition():
 
 
             # data = data_creation(n_per, n_cmt, 2, name, sd)
-            data = pd.read_csv("data/model_data/" + str(iteration) + "th/" + str(sd) + "/underlying_data_" + name + ".csv")
+            data = pd.read_csv("data/model_data_new/" + str(iteration) + "th/" + str(sd) + "/underlying_data_" + name + ".csv")
+            data = data.dropna()
             data = data.drop(data.columns[0], axis=1).astype(int).values
 
-            print(data)
+            # print(data)
 
 
             path = "data/random_data/" + str(iteration) + "th/" + str(sd)
@@ -452,18 +473,18 @@ def rd_alg_based_on_condition():
 
 
 if __name__ == "__main__":
-    args = sys.argv[1:]
-    VERSION = int(args[0])
+    # args = sys.argv[1:]
+    # VERSION = int(args[0])
 
-    id = '100'
-    mul = 1
-    n_per = 293
-    n_cmt = 152 * mul  # number of different votes
-    data = data_creation(n_per, n_cmt, 2, id)
+    # id = '100'
+    # mul = 1
+    # n_per = 293
+    # n_cmt = 152 * mul  # number of different votes
+    # data = data_creation(n_per, n_cmt, 2, id)
 
 
-    consensus = voting_alg(data, POLIS, id, mul)
+    # consensus = voting_alg(data, POLIS, id, mul)
     # alg_based_on_condition()
     # rd_voting(data)
-    # rd_alg_based_on_condition()
+    rd_alg_based_on_condition()
 

@@ -700,8 +700,6 @@ def get_under_labels():
 
             # score = cls.silhouette_score(smoll_data, labels)
             pd.DataFrame(labels).to_csv(save_path + name + ".csv")
-            # print(score)
-            # print(len(labels))
 
 
 
@@ -718,8 +716,8 @@ def compare_labels():
     dist = np.zeros([2,9,12])
 
 
-    for i in range(9):
-        under_read = "data/model_data/" + str(i) + "th/60/"
+    for i in range(3): ######### has to be changed to the number of repetitions
+        under_read = "data/model_data_new/" + str(i) + "th/60/"
         model_read = "data/model_data/" + str(i) + "th/60/"
         rd_read = "data/random_data/" + str(i) + "th/60/"
 
@@ -727,7 +725,9 @@ def compare_labels():
         cnt = -1
         for name in names:
             cnt += 1
-            under_lbs  = pd.read_csv(under_read + "labels_" + name +  ".csv")
+
+
+            under_lbs =  pd.read_csv(under_read + "cluster_" + name +  ".csv")
             under_lbs = under_lbs.dropna()
             under_lbs = under_lbs.drop(under_lbs.columns[0], axis=1).values
             under_lbs = under_lbs.astype(int).reshape(1,-1)
@@ -777,7 +777,7 @@ def compare_labels():
     print("MEAN ", np.mean(mean_dist,axis=1))
 
 
-    plt.boxplot([mean_dist[0,:], mean_dist[1,:]])
+    plt.boxplot([mean_dist[0,:], mean_dist[1,:]],labels= ["model", "random"])
     plt.savefig("tmp/aaa.png")
     plt.close()
 

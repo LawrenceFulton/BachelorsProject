@@ -39,16 +39,15 @@ def cum_mean(df,path):
     plt.plot(idx, cum_sum_mean)
     plt.xlabel("votes")
     plt.ylabel("% of agreement")
-    plt.set_dpi(300)
+    # plt.set_dpi(300)
     plt.savefig("figures/mean/"+path+".png")
     plt.close()
-    print("why?")
 
 def cum_std(df, path):
 
     # number of different questions 
     n_comment = max(df[:,0]) + 1
-    print(n_comment)
+
 
     # number of votes for each question
     n_votes_comment = np.zeros(int(n_comment))
@@ -300,10 +299,13 @@ if __name__ == '__main__':
     # analyse_polis() 
     # analyse_own()
 
-    a = pd.read_csv('data/1th/0/underlying_data_100.csv')
+    a = pd.read_csv('data/1th/0/vote_hist_100.csv')
     data = a.drop(a.columns[0], axis=1).values
-
+    data = data.astype(int)
+    print(data)
 
     cum_mean(data, "test123")
+    cum_std(data,"test123")
+    cum_own_metric(data,"test123")
 
     pass

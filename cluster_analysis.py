@@ -1,9 +1,7 @@
 from sys import path
 import numpy as np
 from matplotlib import pyplot as plt
-from numpy.core.fromnumeric import ptp
 import pandas as pd
-from scipy.stats.stats import mode
 from sklearn.decomposition import PCA
 import preprocessing as pre
 import clustering as cls
@@ -183,15 +181,19 @@ def get_labels(hist: np.array, n_per, n_cmt):
 
 
 def save_labels():
+    '''
+    Takes artificaially (random and not random) generated data and saves the labels which
+    then later can be compared with the grounnd thruths of the labels 
+    '''
 
     names = pre.get_all_sub_dir()
 
     a = pd.read_csv('data/polis_conditions.csv')
     a = a.drop(a.columns[0], axis=1).values
 
-    for i in range(9):
+    for i in range(4): ############### has to be changed again  #################
 
-        model_read = "data/model_data/" + str(i) + "th/60/"
+        model_read = "data/model_data_new/" + str(i) + "th/60/"
         rd_read = "data/random_data/" + str(i) + "th/60/"
 
         # for name in names:
@@ -215,8 +217,8 @@ def save_labels():
             model_labels = get_labels(model_data, n_per, n_cmt)
             rd_labels = get_labels(rd_data, n_per, n_cmt)
 
-            pd.DataFrame(model_labels).to_csv(model_read + "model_labels_"  +name + ".csv" )
-            pd.DataFrame(rd_labels).to_csv(rd_read + "rd_labels_"  +name + ".csv" )
+            pd.DataFrame(model_labels).to_csv(model_read + "model_labels_" + name + ".csv" )
+            pd.DataFrame(rd_labels).to_csv(rd_read + "rd_labels_" + name + ".csv" )
 
             
 
