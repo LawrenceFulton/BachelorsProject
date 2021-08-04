@@ -712,13 +712,15 @@ def get_under_labels():
 
 def compare_labels():
     names = pre.get_all_sub_dir()
+    rep = 8 # repetitions 
 
-    dist = np.zeros([2,9,12])
+
+    dist = np.zeros([2,rep,12])
 
 
-    for i in range(3): ######### has to be changed to the number of repetitions
+    for i in range(rep): ######### has to be changed to the number of repetitions
         under_read = "data/model_data_new/" + str(i) + "th/60/"
-        model_read = "data/model_data/" + str(i) + "th/60/"
+        model_read = "data/model_data_new/" + str(i) + "th/60/"
         rd_read = "data/random_data/" + str(i) + "th/60/"
 
 
@@ -744,13 +746,14 @@ def compare_labels():
 
 
             dist_model_1 = distance.jaccard(under_lbs, model_lbs)
-            dist_model_2 = distance.jaccard(under_lbs, (model_lbs) - 1 * -1)
+            dist_model_2 = distance.jaccard(under_lbs, (model_lbs- 1) * -1)
             
             dist_rd_1 = distance.jaccard(under_lbs, rd_lbs)
-            dist_rd_2 = distance.jaccard(under_lbs, (rd_lbs) - 1 * -1)
+            dist_rd_2 = distance.jaccard(under_lbs, (rd_lbs - 1) * -1)
 
 
             dist_model = min(dist_model_1, dist_model_2)
+            # print(under_lbs, model_lbs )
             dist_rd = min(dist_rd_1, dist_rd_2)
 
 
@@ -775,10 +778,20 @@ def compare_labels():
     mean_dist = np.mean(dist, axis = 1)
     print(mean_dist)
     print("MEAN ", np.mean(mean_dist,axis=1))
+    print("SD ", np.std(mean_dist, axis=1))
 
 
-    plt.boxplot([mean_dist[0,:], mean_dist[1,:]],labels= ["model", "random"])
-    plt.savefig("tmp/aaa.png")
+    c = "#0090ff"
+    plt.rc('font', size=15) 
+    plt.ylabel("Jaccard-Needham Dissimilarity")
+    plt.xlabel("Model Used")
+    plt.boxplot([mean_dist[0,:], mean_dist[1,:]], 
+                widths = 0.6, 
+                labels= ["Polis", "Random"] , 
+                patch_artist= True,
+                boxprops=dict(facecolor=c, color=c), 
+                notch = True)
+    plt.savefig("figures/distance_from_underlying_cluster.pdf")
     plt.close()
 
     t = stats.ttest_rel(mean_dist[0,:], mean_dist[1,:])

@@ -191,7 +191,7 @@ def save_labels():
     a = pd.read_csv('data/polis_conditions.csv')
     a = a.drop(a.columns[0], axis=1).values
 
-    for i in range(4): ############### has to be changed again  #################
+    for i in range(8): ############### has to be changed again  #################
 
         model_read = "data/model_data_new/" + str(i) + "th/60/"
         rd_read = "data/random_data/" + str(i) + "th/60/"

@@ -437,7 +437,7 @@ def rd_alg_based_on_condition():
     a = np.array(pd.read_csv("data/polis_conditions.csv"))
     mul = 1
     sd = 60
-    for iteration in range(0,4):
+    for iteration in range(0,10): ############# has to be changed based on # of datasets #####
         path = "data/random_data/" + str(iteration) + "th/"
         try: 
             os.mkdir(path) 
